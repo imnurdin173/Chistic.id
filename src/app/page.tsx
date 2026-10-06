@@ -1,5 +1,6 @@
 import Image from "next/image";
 import styles from "./page.module.css";
+import { prisma } from '@/lib/prisma'; //cara ketika butuh query ke database (di Server Components atau API Routes) cukup impor ini
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
           priority
         />
         <div className={styles.intro}>
+          <h1 className="text-3xl font-bold underline text-blue-600">Hello World</h1>)
           <h1>
             To get started, edit the{" "}
             <code className={styles.code}>page.tsx</code> file.
