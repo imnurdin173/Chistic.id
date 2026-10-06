@@ -15,7 +15,7 @@ export default function Home() {
           priority
         />
         <div className={styles.intro}>
-          <h1 className="text-3xl font-bold underline text-blue-600">Hello World</h1>)
+          <h1 className="text-3xl font-bold underline text-blue-600">Hello Imam, Kiel, Muti</h1>)
           <h1>
             To get started, edit the{" "}
             <code className={styles.code}>page.tsx</code> file.
