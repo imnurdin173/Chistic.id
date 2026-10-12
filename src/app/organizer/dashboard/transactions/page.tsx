@@ -4,8 +4,11 @@ import React, { useState } from "react";
 import Sidebar from "@/components/SidebarDashboard";
 import TransactionFilters from "@/components/dashboard/transactions/TransactionFilters";
 import TransactionTable from "@/components/dashboard/transactions/TransactionTable";
+import ReviewAction from "@/components/dashboard/transactions/ReviewAction";
 import Pagination from "@/components/dashboard/transactions/Pagination";
 import { TransactionItem } from "@/types/transaction";
+import Footer from "@/components/menubar/footer";
+import NavbarNotLoggedIn from "@/components/menubar/navbar";
 
 const DUMMY_TRANSACTIONS: TransactionItem[] = [
   {
@@ -87,6 +90,9 @@ const DUMMY_TRANSACTIONS: TransactionItem[] = [
 ];
 
 export default function TransactionsPage() {
+  const [transactions, setTransactions] = useState<TransactionItem[]>(DUMMY_TRANSACTIONS);
+  const [selectedTrxForReview, setSelectedTrxForReview] = useState<TransactionItem | null>(null);
+  const [isActionOpen, setIsActionOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>("ALL");
   const [selectedEvent, setSelectedEvent] = useState<string>("All Event");
   const [selectedDateRange, setSelectedDataRange] = useState<string>("Last 30 Days");
@@ -102,46 +108,50 @@ export default function TransactionsPage() {
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
   const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const handleReview = (trx: TransactionItem) => {
-    const confirmation = window.confirm(
-      `[SIMULASI REVIEW BUKTI BAYAR]\n\n` +
-        `No Transaction: #${trx.id}\n` +
-        `Customer: ${trx.customerName}\n` +
-        `Ticket: ${trx.ticketTier} (${trx.quantity} ticket)\n` +
-        `Total: Rp. ${trx.totalPrice.toLocaleString("id-ID")}\n\n` +
-        `PILIHAN ORGANIZER: \n` +
-        `Click 'OK' for ACCEPT (Change Status to DONE & Create E-Ticket PDF)\n` +
-        `Click 'Cancel' for REJECT (Change Status to REJECTED & Return the Quota)`,
-    );
-
-    if (confirmation) {
-      alert(`Transaction #${trx.id} SUCCESS ACCEPTED! Status has changed to DONE`);
-    } else {
-      alert(`Transaction #${trx.id} REJECTED! Return the quota ticet`);
-    }
+  const handleOpenReview = (trx: TransactionItem) => {
+    setSelectedTrxForReview(trx);
+    setIsActionOpen(true);
   };
 
-  const handleView = (trx: TransactionItem) => {
-    alert(
-      `Detail Transaction #${trx.id}\nCustomer:
-      ${trx.customerName}\nStatus: ${trx.status}\nTier: ${trx.ticketTier}x${trx.quantity}
-      `
-    )
+  const handleAcceptTransaction = (trxId: string) => {
+    setTransactions((prev) => prev.map((trx) => (trx.id === trx.id ? { ...trx, status: "DONE", autoCancelCountdown: undefined } : trx)));
+    setIsActionOpen(false);
+    setSelectedTrxForReview(null);
+  };
+
+  const handleRejectTransaction = (trxId: string) => {
+    setTransactions((prev) =>
+      prev.map((trx) =>
+        trx.id === trxId
+          ? { ...trx, status: "REJECTED", autoCancelCountdown: undefined }
+          : trx
+      )
+    );
+    setIsActionOpen(false);
+    setSelectedTrxForReview(null);
   }
 
+  const handleCloseAction = () => {
+    setIsActionOpen(false)
+    setSelectedTrxForReview(null)
+  }
+
+  const handleView = (trx: TransactionItem) => {
+    alert(`Looking detail history Transactions #${trx.id} (${trx.status})`);
+  };
+
   return (
+    <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 font-sans flex flex-col justify-between">
     <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 p-4 md:p-8 font-sans">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
-
         <Sidebar />
 
         <main className="flex-1 w-full bg-white rounded-2xl p-6 md:p-8 shadow-xs border border-neutral-100">
-
-          <TransactionFilters 
+          <TransactionFilters
             activeTab={activeTab}
             onTabChange={(tab) => {
-              setActiveTab(tab)
-              setCurrentPage(1)
+              setActiveTab(tab);
+              setCurrentPage(1);
             }}
             selectedEvent={selectedEvent}
             onEventChange={setSelectedEvent}
@@ -149,21 +159,21 @@ export default function TransactionsPage() {
             onDateRangeChange={setSelectedDataRange}
           />
 
-          <TransactionTable 
-            transactions={paginatedData}
-            onReview={handleReview}
-            onView={handleView}
-          />
+          <TransactionTable transactions={paginatedData} onReview={handleOpenReview} onView={handleView} />
 
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPageChange={(page) => setCurrentPage(page)}
-          />
+          <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} itemsPerPage={itemsPerPage} onPageChange={(page) => setCurrentPage(page)} />
         </main>
       </div>
+      <ReviewAction 
+      isOpen={isActionOpen}
+      transaction={selectedTrxForReview}
+      onClose={handleCloseAction}
+      onAccept={handleAcceptTransaction}
+      onReject={handleRejectTransaction}
+      />
+
+    </div>
+      <Footer />
     </div>
   );
 }
