@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link'; // 👈 1. IMPORT LINK DARI NEXT.JS
 
 import Navbar from '@/components/menubar/navbar';
 import Footer from '@/components/menubar/footer';
@@ -73,30 +74,34 @@ export default function HomePageContent() {
           </div>
         </section>
 
-        {/* 3. Section Presale Event (Khusus tampilan dengan Tag Presale, Timer Ends At, & Progress Bar) */}
+        {/* 3. Section Presale Event */}
         <EventSectionSlider
           title="Presale Event"
           events={presaleEvents}
           isPresale={true}
         />
 
-        {/* 4. Section Hot Event This Week (Tampilan Card Polos Sesuai Desain Acuan) */}
+        {/* 4. Section Hot Event This Week */}
         <EventSectionSlider
           title="Hot Event This Week"
           events={hotEvents}
         />
 
-        {/* 5. Section Popular Event (Tampilan Card Polos Sesuai Desain Acuan) */}
+        {/* 5. Section Popular Event */}
         <EventSectionSlider
           title="Popular Event"
           events={popularEvents}
         />
 
-        {/* 6. Tombol "Lihat Lainnya" - Lonjong Sesuai Desain */}
+        {/* 6. Tombol "Lihat Lainnya" - Tersambung ke halaman Browse Event List */}
         <div className="mt-12 flex justify-center">
-          <button className="w-full max-w-xs sm:max-w-md rounded-full border-2 border-amber-400/80 bg-amber-50/20 py-3 text-center text-sm font-bold text-amber-500 transition hover:bg-amber-400 hover:text-white shadow-xs">
+          {/* 👈 2. BUNGKUS / DENGAN HREF KE ROUTE BROWSE EVENT LIST */}
+          <Link 
+            href="/events" // ⚠️ Sesuaikan /events dengan nama folder route browse event kamu (misal: /events, /browse, dll)
+            className="w-full max-w-xs sm:max-w-md rounded-full border-2 border-amber-400/80 bg-amber-50/20 py-3 text-center text-sm font-bold text-amber-500 transition hover:bg-amber-400 hover:text-white shadow-xs block"
+          >
             Lihat Lainnya
-          </button>
+          </Link>
         </div>
       </main>
 
