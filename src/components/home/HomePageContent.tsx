@@ -67,10 +67,10 @@ export default function HomePageContent() {
       {/* 1. Header / Navbar */}
       <Navbar />
 
-      <main className="max-w-6xl mx-auto px-4 space-y-10 pt-6 pb-16 w-full">
+      <main className="max-w-[1025px] mx-auto px-4 space-y-10 pt-6 pb-16 w-full">
         
-        {/* 2. Hero Banner Carousel */}
-        <section className="relative w-full h-[320px] rounded-2xl overflow-hidden shadow-lg bg-gray-900">
+        {/* 2. Hero Banner Carousel (Figma: 1025px x 572px, radius 12px) */}
+        <section className="relative w-full h-[572px] rounded-[12px] overflow-hidden shadow-lg bg-gray-900">
           <div className="relative w-full h-full">
             <Image 
               src={bannerImages[currentBanner].url} 
@@ -96,9 +96,9 @@ export default function HomePageContent() {
           </div>
         </section>
 
-        {/* 3. Presale Event Section */}
-        <section className="bg-gradient-to-r from-amber-400 via-amber-200/50 to-orange-100/30 p-6 rounded-2xl">
-          <h2 className="text-base font-bold text-gray-900 mb-4">Presale Event</h2>
+        {/* 3. Presale Event Section (Gradasi Oranye Warm Sesuai Figma) */}
+        <section className="bg-gradient-to-r from-[#FF8A00] via-[#FFD085] to-[#FAF8F5] p-6 rounded-tl-[40px] rounded-tr-2xl rounded-bl-2xl rounded-br-2xl shadow-sm">
+          <h2 className="text-xl font-extrabold text-gray-900 mb-4">Presale Event</h2>
           <div className="relative overflow-hidden group">
             
             {/* Scroll Container tanpa Scrollbar */}
@@ -117,12 +117,12 @@ export default function HomePageContent() {
             </div>
 
             {/* Efek Cutoff / Fade Gradasi Kanan */}
-            <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-orange-100 to-transparent pointer-events-none z-10" />
+            <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[#FFE8C8] to-transparent pointer-events-none z-10" />
 
             {/* Tombol Panah Kiri */}
             <button 
               onClick={() => handleScroll(presaleRef, 'left')}
-              className="absolute left-1 top-1/2 -translate-y-1/2 bg-white shadow-md p-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 z-20 cursor-pointer opacity-90 hover:opacity-100 transition"
+              className="absolute left-1 top-1/2 -translate-y-1/2 bg-white/90 shadow-md p-2 rounded-full border border-gray-200 text-gray-700 hover:bg-white z-20 cursor-pointer opacity-90 hover:opacity-100 transition"
               aria-label="Scroll left"
             >
               <ChevronLeft size={20} />
@@ -131,7 +131,7 @@ export default function HomePageContent() {
             {/* Tombol Panah Kanan */}
             <button 
               onClick={() => handleScroll(presaleRef, 'right')}
-              className="absolute right-1 top-1/2 -translate-y-1/2 bg-white shadow-md p-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 z-20 cursor-pointer opacity-90 hover:opacity-100 transition"
+              className="absolute right-1 top-1/2 -translate-y-1/2 bg-white/90 shadow-md p-2 rounded-full border border-gray-200 text-gray-700 hover:bg-white z-20 cursor-pointer opacity-90 hover:opacity-100 transition"
               aria-label="Scroll right"
             >
               <ChevronRight size={20} />
@@ -141,10 +141,9 @@ export default function HomePageContent() {
 
         {/* 4. Hot Event This Week */}
         <section>
-          <h2 className="text-base font-bold text-gray-900 mb-4">Hot Event This Week</h2>
+          <h2 className="text-lg font-extrabold text-gray-900 mb-4">Hot Event This Week</h2>
           <div className="relative overflow-hidden group">
             
-            {/* Scroll Container tanpa Scrollbar */}
             <div 
               ref={hotRef}
               className="flex gap-4 overflow-x-auto w-full scroll-smooth flex-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-2"
@@ -159,10 +158,8 @@ export default function HomePageContent() {
               ))}
             </div>
 
-            {/* Efek Cutoff / Fade Gradasi Kanan */}
             <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[#FAF8F5] to-transparent pointer-events-none z-10" />
 
-            {/* Tombol Panah Kiri */}
             <button 
               onClick={() => handleScroll(hotRef, 'left')}
               className="absolute left-1 top-1/2 -translate-y-1/2 bg-white shadow-md p-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 z-20 cursor-pointer opacity-90 hover:opacity-100 transition"
@@ -171,7 +168,6 @@ export default function HomePageContent() {
               <ChevronLeft size={20} />
             </button>
 
-            {/* Tombol Panah Kanan */}
             <button 
               onClick={() => handleScroll(hotRef, 'right')}
               className="absolute right-1 top-1/2 -translate-y-1/2 bg-white shadow-md p-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 z-20 cursor-pointer opacity-90 hover:opacity-100 transition"
@@ -184,10 +180,9 @@ export default function HomePageContent() {
 
         {/* 5. Popular Event */}
         <section>
-          <h2 className="text-base font-bold text-gray-900 mb-4">Popular Event</h2>
+          <h2 className="text-lg font-extrabold text-gray-900 mb-4">Popular Event</h2>
           <div className="relative overflow-hidden group">
             
-            {/* Scroll Container tanpa Scrollbar */}
             <div 
               ref={popularRef}
               className="flex gap-4 overflow-x-auto w-full scroll-smooth flex-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-2"
@@ -202,10 +197,8 @@ export default function HomePageContent() {
               ))}
             </div>
 
-            {/* Efek Cutoff / Fade Gradasi Kanan */}
             <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[#FAF8F5] to-transparent pointer-events-none z-10" />
 
-            {/* Tombol Panah Kiri */}
             <button 
               onClick={() => handleScroll(popularRef, 'left')}
               className="absolute left-1 top-1/2 -translate-y-1/2 bg-white shadow-md p-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 z-20 cursor-pointer opacity-90 hover:opacity-100 transition"
@@ -214,7 +207,6 @@ export default function HomePageContent() {
               <ChevronLeft size={20} />
             </button>
 
-            {/* Tombol Panah Kanan */}
             <button 
               onClick={() => handleScroll(popularRef, 'right')}
               className="absolute right-1 top-1/2 -translate-y-1/2 bg-white shadow-md p-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 z-20 cursor-pointer opacity-90 hover:opacity-100 transition"
@@ -225,7 +217,7 @@ export default function HomePageContent() {
           </div>
         </section>
 
-        {/* 6. Tombol Lihat Lainnya (Menuju ke /events) */}
+        {/* 6. Tombol Lihat Lainnya */}
         <div className="flex justify-center pt-2">
           <Link 
             href="/events"
