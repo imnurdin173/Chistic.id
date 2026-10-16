@@ -12,6 +12,9 @@ export const metadata: Metadata = {
     default: "Chistix.id",
     template: "%s | Chistix.id"
   },
+  icons: {
+    icon: "/favicon.png"
+  },
   description: "Your Crunchy Event ",
   keywords: ["Live Concerts","Viral Events","Acara Populer di Indonesia","Seminar Premium" ]
 };
