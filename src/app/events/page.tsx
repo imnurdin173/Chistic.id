@@ -18,7 +18,7 @@ export default function BrowseEventPage() {
       price: 50000,
       originalPrice: 75000,
       date: '30 Desember 2026',
-      image: '/images/event-symphony.jpg',
+      image: '/images/img-event-10-sq.jpg',
       status: 'normal',
     },
   ];

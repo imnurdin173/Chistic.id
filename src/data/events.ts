@@ -10,6 +10,16 @@ export interface EventItem {
   image: string;
   status: 'normal' | 'almost-sold' | 'sold-out';
   almostSoldText?: string;
+  // Field Tambahan untuk Presale & Progress
+  isPresale?: boolean;
+  presaleTag?: string; // contoh: 'Presale 1'
+  presaleEndAt?: {
+    days: number;
+    hours: number;
+    minutes: number;
+  };
+  progressPercent?: number; // Nilai 0 - 100 untuk progress bar
+  stockStatusText?: string; // contoh: 'Hampir Habis' atau 'Limited Stock'
 }
 
 export const DUMMY_EVENTS: EventItem[] = [
@@ -22,8 +32,13 @@ export const DUMMY_EVENTS: EventItem[] = [
     price: 89000,
     originalPrice: 150000,
     date: '19 Desember 2026',
-    image: '/images/event-symphony.jpg',
-    status: 'normal',
+    image: '/images/img-event-1-sq.jpg',
+    status: 'almost-sold',
+    isPresale: true,
+    presaleTag: 'Presale 1',
+    presaleEndAt: { days: 0, hours: 2, minutes: 15 },
+    progressPercent: 85,
+    stockStatusText: 'Hampir Habis',
   },
   {
     id: '2',
@@ -34,8 +49,13 @@ export const DUMMY_EVENTS: EventItem[] = [
     price: 120000,
     originalPrice: 180000,
     date: '20 Desember 2026',
-    image: '/images/event-symphony.jpg',
+    image: '/images/img-event-2-sq.jpg',
     status: 'normal',
+    isPresale: true,
+    presaleTag: 'Presale 2',
+    presaleEndAt: { days: 1, hours: 5, minutes: 30 },
+    progressPercent: 60,
+    stockStatusText: 'Hampir Habis',
   },
   {
     id: '3',
@@ -46,8 +66,13 @@ export const DUMMY_EVENTS: EventItem[] = [
     price: 75000,
     originalPrice: 100000,
     date: '21 Desember 2026',
-    image: '/images/event-symphony.jpg',
+    image: '/images/img-event-3-sq.jpg',
     status: 'normal',
+    isPresale: true,
+    presaleTag: 'Presale 1',
+    presaleEndAt: { days: 0, hours: 8, minutes: 45 },
+    progressPercent: 90,
+    stockStatusText: 'Hampir Habis',
   },
   {
     id: '4',
@@ -58,7 +83,7 @@ export const DUMMY_EVENTS: EventItem[] = [
     price: 60000,
     originalPrice: 90000,
     date: '22 Desember 2026',
-    image: '/images/event-symphony.jpg',
+    image: '/images/img-event-4-sq.jpg',
     status: 'almost-sold',
     almostSoldText: 'Only 10 Spot Left!',
   },
@@ -71,7 +96,7 @@ export const DUMMY_EVENTS: EventItem[] = [
     price: 250000,
     originalPrice: 350000,
     date: '23 Desember 2026',
-    image: '/images/event-symphony.jpg',
+    image: '/images/img-event-5-sq.jpg',
     status: 'sold-out',
   },
   {
@@ -82,7 +107,7 @@ export const DUMMY_EVENTS: EventItem[] = [
     city: 'Bandung',
     price: 50000,
     date: '24 Desember 2026',
-    image: '/images/event-symphony.jpg',
+    image: '/images/img-event-6-sq.jpg',
     status: 'normal',
   },
   {
@@ -94,7 +119,7 @@ export const DUMMY_EVENTS: EventItem[] = [
     price: 35000,
     originalPrice: 50000,
     date: '27 Desember 2026',
-    image: '/images/event-symphony.jpg',
+    image: '/images/img-event-7-sq.jpg',
     status: 'almost-sold',
     almostSoldText: 'Only 5 Spot Left!',
   },
@@ -106,7 +131,7 @@ export const DUMMY_EVENTS: EventItem[] = [
     city: 'Surabaya',
     price: 45000,
     date: '29 Desember 2026',
-    image: '/images/event-symphony.jpg',
+    image: '/images/img-event-8-sq.jpg',
     status: 'normal',
   },
 ];
