@@ -12,32 +12,60 @@ export default function EventsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
+  const [minPrice, setMinPrice] = useState<number | undefined>();
+  const [maxPrice, setMaxPrice] = useState<number | undefined>();
+  const [sortOption, setSortOption] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
-  const handleFilterChange = (filters: any) => {
-    if (filters?.category) setSelectedCategory(filters.category);
-    if (filters?.location) setSelectedLocation(filters.location);
+  const handleFilterChange = (filters: {
+    category?: string;
+    location?: string;
+    minPrice?: number;
+    maxPrice?: number;
+  }) => {
+    if (filters.category !== undefined) setSelectedCategory(filters.category);
+    if (filters.location !== undefined) setSelectedLocation(filters.location);
+    setMinPrice(filters.minPrice);
+    setMaxPrice(filters.maxPrice);
     setCurrentPage(1);
   };
 
   const handleReset = () => {
     setSelectedCategory('');
     setSelectedLocation('');
+    setMinPrice(undefined);
+    setMaxPrice(undefined);
     setSearchQuery('');
+    setSortOption('');
     setCurrentPage(1);
   };
 
+  // Filter Data
   const filteredEvents = DUMMY_EVENTS.filter((event) => {
     const matchCategory = selectedCategory ? event.category === selectedCategory : true;
     const matchLocation = selectedLocation ? event.location.includes(selectedLocation) : true;
     const matchSearch = searchQuery ? event.title.toLowerCase().includes(searchQuery.toLowerCase()) : true;
-    return matchCategory && matchLocation && matchSearch;
+    
+    const matchMinPrice = minPrice !== undefined ? event.price >= minPrice : true;
+    const matchMaxPrice = maxPrice !== undefined ? event.price <= maxPrice : true;
+
+    return matchCategory && matchLocation && matchSearch && matchMinPrice && matchMaxPrice;
   });
 
-  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage) || 1;
+  // Sorting Data dalam Bahasa Inggris
+  const sortedEvents = [...filteredEvents].sort((a, b) => {
+    if (sortOption === 'latest') return new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (sortOption === 'popular') return (b.isPopular ? 1 : 0) - (a.isPopular ? 1 : 0);
+    if (sortOption === 'price-low') return a.price - b.price;
+    if (sortOption === 'price-high') return b.price - a.price;
+    return 0;
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(sortedEvents.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentEvents = filteredEvents.slice(startIndex, startIndex + itemsPerPage);
+  const currentEvents = sortedEvents.slice(startIndex, startIndex + itemsPerPage);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -54,7 +82,7 @@ export default function EventsPage() {
         <div className="flex flex-col md:flex-row gap-6 items-start">
           
           {/* Sidebar Portal Kiri */}
-          <aside className="w-full md:w-[260px] flex-shrink-0">
+          <aside className="w-full md:w-[240px] flex-shrink-0">
             <SidebarPortal 
               onFilterChange={handleFilterChange}
               onReset={handleReset}
@@ -64,18 +92,25 @@ export default function EventsPage() {
           {/* Konten Utama Kanan */}
           <div className="flex-1 w-full space-y-4">
             
-            {/* 1. Bar Sort Dibungkus Kotak Putih dengan Select Ber-border */}
-            <div className="bg-white rounded-2xl px-5 py-3.5 border border-gray-200/80 shadow-sm flex items-center w-full">
+            {/* 1. Bar Sort (Opsi Bahasa Inggris, Teks text-base, Box Ringkas) */}
+            <div className="bg-white rounded-2xl px-5 py-3 border border-gray-200/80 shadow-sm flex items-center w-full">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold text-gray-800">Sort</span>
+                <span className="text-sm font-bold text-gray-800">Sort</span>
                 
                 <div className="relative">
-                  <select className="appearance-none bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-400 focus:outline-none focus:border-amber-500 cursor-pointer pr-8">
-                    <option value="" disabled selected>Select option</option>
-                    <option value="latest" className="text-gray-700">Paling Baru</option>
-                    <option value="popular" className="text-gray-700">Terpopuler</option>
-                    <option value="price-low" className="text-gray-700">Harga Terendah</option>
-                    <option value="price-high" className="text-gray-700">Harga Tertinggi</option>
+                  <select 
+                    value={sortOption}
+                    onChange={(e) => {
+                      setSortOption(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="appearance-none bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-base font-medium text-gray-700 focus:outline-none focus:border-amber-500 cursor-pointer pr-8 min-w-[160px] leading-tight"
+                  >
+                    <option value="" disabled>Select option</option>
+                    <option value="latest" className="text-base py-1">Newest</option>
+                    <option value="popular" className="text-base py-1">Most Popular</option>
+                    <option value="price-low" className="text-base py-1">Price: Low to High</option>
+                    <option value="price-high" className="text-base py-1">Price: High to Low</option>
                   </select>
                   
                   <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
