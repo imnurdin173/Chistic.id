@@ -1,70 +1,111 @@
-import EventOrderSidebar from '@/components/detailEvent/EventOrderSidebar';
-import EventHeaderInfo from '@/components/detailEvent/EventHeaderInfo';
-import EventContent from '@/components/detailEvent/EventContent';
-import EventReviews from '@/components/detailEvent/EventReviews';
-import EventCard from '@/components/EventCard';
+// src/app/events/[id]/page.tsx
+import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { DUMMY_EVENTS } from '@/data/events';
 
-interface EventDetailPageProps {
-  params: Promise<{
-    id: string;
-  }>;
+interface PageProps {
+  params: Promise<{ id: string }>;
 }
 
-export default async function EventDetailPage({ params }: EventDetailPageProps) {
+export default async function EventDetailPage({ params }: PageProps) {
   const { id } = await params;
 
-  // Mengambil 4 event dari DUMMY_EVENTS untuk section "Similar Event For You"
-  const similarEvents = DUMMY_EVENTS.slice(0, 4);
+  // Cari event berdasarkan ID dari URL
+  const event = DUMMY_EVENTS.find((item) => item.id === id);
+
+  if (!event) {
+    notFound();
+  }
+
+  // Fungsi pembantu format rupiah
+  const formatRupiah = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-8 flex flex-col gap-8 bg-amber-50/20 min-h-screen">
-      {/* Title Header */}
-      <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
-        Night Symphony: Classic Meets Rock
-      </h1>
+    <main className="max-w-5xl mx-auto px-4 py-8">
+      {/* Tombol Kembali */}
+      <Link href="/events" className="text-sm font-medium text-amber-600 hover:underline mb-4 inline-block">
+        ← Back to Browse Events
+      </Link>
 
-      {/* Main Content Layout (2 Columns) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Left Column */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          {/* Poster Image / Banner */}
-          <div className="w-full aspect-[16/9] bg-slate-900 rounded-2xl overflow-hidden shadow-md border border-gray-200 relative">
-            <img
-              src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&auto=format&fit=crop&q=80"
-              alt="Night Symphony Banner"
-              className="w-full h-full object-cover"
-            />
+      {/* Detail Container */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        {/* Banner Gambar */}
+        <div className="relative w-full h-72 md:h-96 bg-gray-100">
+          <Image
+            src={event.image}
+            alt={event.title}
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
+
+        {/* Info Utama */}
+        <div className="p-6 md:p-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
+              {event.category}
+            </span>
+            <span className="text-sm text-gray-500">
+              Organized by {event.organizer || 'Chistix Organizer'}
+            </span>
           </div>
 
-          {/* Event Info Table */}
-          <EventHeaderInfo />
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{event.title}</h1>
+            <p className="text-gray-600 mt-2">
+              📍 {event.venueDetail || event.location}
+            </p>
+            <p className="text-gray-600 mt-1">📅 {event.date}</p>
+          </div>
 
-          {/* Description & Terms Conditions */}
-          <EventContent />
+          <hr className="border-gray-200" />
 
-          {/* User Reviews */}
-          <EventReviews />
-        </div>
+          {/* Deskripsi */}
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">Description</h2>
+            <p className="text-gray-600 leading-relaxed">
+              {event.description || 'Tidak ada deskripsi tersedia untuk event ini.'}
+            </p>
+          </div>
 
-        {/* Right Column (Sticky Order Sidebar) */}
-        <div className="lg:col-span-1 lg:sticky lg:top-24">
-          <EventOrderSidebar eventId={id} />
+          {/* Box Beli Tiket */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <p className="text-sm text-gray-600">Ticket Price</p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold text-gray-900">
+                  {formatRupiah(event.price)}
+                </p>
+                {event.originalPrice && (
+                  <p className="text-sm text-gray-400 line-through">
+                    {formatRupiah(event.originalPrice)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <button
+              disabled={event.status === 'sold-out'}
+              className={`font-semibold px-6 py-3 rounded-lg transition-colors ${
+                event.status === 'sold-out'
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-amber-500 hover:bg-amber-600 text-black'
+              }`}
+            >
+              {event.status === 'sold-out' ? 'Sold Out' : 'Buy Ticket Now'}
+            </button>
+          </div>
         </div>
       </div>
-
-      {/* Bottom Section: Similar Event For You */}
-      <section className="mt-10 flex flex-col gap-4">
-        <h2 className="text-xl font-bold text-gray-900">
-          Similar Event For You
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          {similarEvents.map((event: any) => (
-            <EventCard key={event.id} event={event} />
-          ))}
-        </div>
-      </section>
     </main>
   );
 }

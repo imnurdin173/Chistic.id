@@ -1,108 +1,240 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import Link from 'next/link'; // 👈 1. IMPORT LINK DARI NEXT.JS
-
+import Link from 'next/link';
+import EventCard from '@/components/EventCard';
+import { DUMMY_EVENTS } from '@/data/events';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 import Navbar from '@/components/menubar/navbar';
 import Footer from '@/components/menubar/footer';
-import EventSectionSlider from '@/components/home/EventSectionSlider';
 
-import { DUMMY_EVENTS as events } from '@/data/events';
-
-const heroSlides = [
-  { id: 1, title: 'RESONANCE', image: '/images/img-event-5-ls.jpg' },
-  { id: 2, title: 'ELECTRONIC DANCE NIGHT', image: '/images/img-event-6-ls.jpg' },
-  { id: 3, title: 'CLASSIC & ROCK', image: '/images/img-event-7-ls.jpg' },
-  { id: 4, title: 'JAZZ EVENING', image: '/images/img-event-8-ls.jpg' },
+// Data Gambar Banner Carousel
+const bannerImages = [
+  {
+    id: 1,
+    url: '/images/img-event-2-ls.jpg',
+    title: 'Electronic Dance Night: Neon Odyssey',
+  },
+  {
+    id: 2,
+    url: '/images/img-event-1-ls.jpg',
+    title: 'Night Symphony: Classic Meets Rock',
+  },
+  {
+    id: 3,
+    url: '/images/img-event-3-ls.jpg',
+    title: 'Jazz Evening at the Park',
+  },
+  {
+    id: 4,
+    url: '/images/img-event-4-ls.jpg',
+    title: 'Indie Music Summit & Showcase',
+  },
 ];
 
 export default function HomePageContent() {
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentBanner, setCurrentBanner] = useState(0);
 
+  // Ref untuk Scroll Horizontal tiap Section
+  const presaleRef = useRef<HTMLDivElement>(null);
+  const hotRef = useRef<HTMLDivElement>(null);
+  const popularRef = useRef<HTMLDivElement>(null);
+
+  // Auto-slide Hero Banner setiap 4 detik
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+      setCurrentBanner((prev) => (prev + 1) % bannerImages.length);
     }, 4000);
     return () => clearInterval(timer);
   }, []);
 
-  // Filter Data Event
-  const presaleEvents = events.slice(0, 4);
-  const hotEvents = events.slice(0, 6);
-  const popularEvents = events.slice(2, 8);
+  // Filter Data Event dari DUMMY_EVENTS
+  const presaleEvents = DUMMY_EVENTS.filter((item) => item.isPresale);
+  const hotEvents = DUMMY_EVENTS.filter((item) => item.isHot);
+  const popularEvents = DUMMY_EVENTS.filter((item) => item.isPopular);
+
+  // Handler Scroll Horizontal (Kiri & Kanan)
+  const handleScroll = (ref: React.RefObject<HTMLDivElement | null>, direction: 'left' | 'right') => {
+    if (ref.current) {
+      const scrollAmount = direction === 'left' ? -300 : 300;
+      ref.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#FFFBF0] text-slate-900">
-      {/* 1. Header Navigation */}
+    <div className="min-h-screen bg-[#FAF8F5] flex flex-col justify-between">
+      {/* 1. Header / Navbar */}
       <Navbar />
 
-      <main className="mx-auto max-w-7xl px-4 py-8 md:px-8">
+      <main className="max-w-6xl mx-auto px-4 space-y-10 pt-6 pb-16 w-full">
+        
         {/* 2. Hero Banner Carousel */}
-        <section className="relative mb-10 overflow-hidden rounded-3xl bg-slate-900 shadow-xl">
-          <div className="relative h-[260px] w-full sm:h-[360px] md:h-[440px]">
-            {heroSlides.map((slide, index) => (
-              <div
-                key={slide.id}
-                className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                  index === currentSlide ? 'z-10 opacity-100' : 'z-0 opacity-0'
-                }`}
-              >
-                <Image
-                  src={slide.image}
-                  alt={slide.title}
-                  fill
-                  className="object-cover"
-                  priority={index === 0}
-                />
-              </div>
-            ))}
+        <section className="relative w-full h-[320px] rounded-2xl overflow-hidden shadow-lg bg-gray-900">
+          <div className="relative w-full h-full">
+            <Image 
+              src={bannerImages[currentBanner].url} 
+              alt={bannerImages[currentBanner].title} 
+              fill 
+              className="object-cover transition-all duration-500" 
+              priority 
+            />
+          </div>
 
-            {/* Indikator Carousel Dot */}
-            <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2">
-              {heroSlides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`h-2 rounded-full transition-all ${
-                    index === currentSlide ? 'w-6 bg-amber-400' : 'w-2 bg-white/50'
-                  }`}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
+          {/* Dots Indicator Carousel */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10 bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm">
+            {bannerImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentBanner(index)}
+                className={`h-2 rounded-full transition-all cursor-pointer ${
+                  currentBanner === index ? 'w-6 bg-amber-500' : 'w-2 bg-white/60'
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
           </div>
         </section>
 
-        {/* 3. Section Presale Event */}
-        <EventSectionSlider
-          title="Presale Event"
-          events={presaleEvents}
-          isPresale={true}
-        />
+        {/* 3. Presale Event Section */}
+        <section className="bg-gradient-to-r from-amber-400 via-amber-200/50 to-orange-100/30 p-6 rounded-2xl">
+          <h2 className="text-base font-bold text-gray-900 mb-4">Presale Event</h2>
+          <div className="relative overflow-hidden group">
+            
+            {/* Scroll Container tanpa Scrollbar */}
+            <div 
+              ref={presaleRef}
+              className="flex gap-4 overflow-x-auto w-full scroll-smooth flex-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-2"
+            >
+              {presaleEvents.map((event) => (
+                <div key={event.id} className="flex-shrink-0">
+                  <EventCard
+                    variant="presale"
+                    event={event}
+                  />
+                </div>
+              ))}
+            </div>
 
-        {/* 4. Section Hot Event This Week */}
-        <EventSectionSlider
-          title="Hot Event This Week"
-          events={hotEvents}
-        />
+            {/* Efek Cutoff / Fade Gradasi Kanan */}
+            <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-orange-100 to-transparent pointer-events-none z-10" />
 
-        {/* 5. Section Popular Event */}
-        <EventSectionSlider
-          title="Popular Event"
-          events={popularEvents}
-        />
+            {/* Tombol Panah Kiri */}
+            <button 
+              onClick={() => handleScroll(presaleRef, 'left')}
+              className="absolute left-1 top-1/2 -translate-y-1/2 bg-white shadow-md p-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 z-20 cursor-pointer opacity-90 hover:opacity-100 transition"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft size={20} />
+            </button>
 
-        {/* 6. Tombol "Lihat Lainnya" - Tersambung ke halaman Browse Event List */}
-        <div className="mt-12 flex justify-center">
-          {/* 👈 2. BUNGKUS / DENGAN HREF KE ROUTE BROWSE EVENT LIST */}
+            {/* Tombol Panah Kanan */}
+            <button 
+              onClick={() => handleScroll(presaleRef, 'right')}
+              className="absolute right-1 top-1/2 -translate-y-1/2 bg-white shadow-md p-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 z-20 cursor-pointer opacity-90 hover:opacity-100 transition"
+              aria-label="Scroll right"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        </section>
+
+        {/* 4. Hot Event This Week */}
+        <section>
+          <h2 className="text-base font-bold text-gray-900 mb-4">Hot Event This Week</h2>
+          <div className="relative overflow-hidden group">
+            
+            {/* Scroll Container tanpa Scrollbar */}
+            <div 
+              ref={hotRef}
+              className="flex gap-4 overflow-x-auto w-full scroll-smooth flex-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-2"
+            >
+              {hotEvents.map((event) => (
+                <div key={event.id} className="flex-shrink-0">
+                  <EventCard
+                    variant="standard"
+                    event={event}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Efek Cutoff / Fade Gradasi Kanan */}
+            <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[#FAF8F5] to-transparent pointer-events-none z-10" />
+
+            {/* Tombol Panah Kiri */}
+            <button 
+              onClick={() => handleScroll(hotRef, 'left')}
+              className="absolute left-1 top-1/2 -translate-y-1/2 bg-white shadow-md p-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 z-20 cursor-pointer opacity-90 hover:opacity-100 transition"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft size={20} />
+            </button>
+
+            {/* Tombol Panah Kanan */}
+            <button 
+              onClick={() => handleScroll(hotRef, 'right')}
+              className="absolute right-1 top-1/2 -translate-y-1/2 bg-white shadow-md p-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 z-20 cursor-pointer opacity-90 hover:opacity-100 transition"
+              aria-label="Scroll right"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        </section>
+
+        {/* 5. Popular Event */}
+        <section>
+          <h2 className="text-base font-bold text-gray-900 mb-4">Popular Event</h2>
+          <div className="relative overflow-hidden group">
+            
+            {/* Scroll Container tanpa Scrollbar */}
+            <div 
+              ref={popularRef}
+              className="flex gap-4 overflow-x-auto w-full scroll-smooth flex-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-2"
+            >
+              {popularEvents.map((event) => (
+                <div key={event.id} className="flex-shrink-0">
+                  <EventCard
+                    variant="standard"
+                    event={event}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Efek Cutoff / Fade Gradasi Kanan */}
+            <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[#FAF8F5] to-transparent pointer-events-none z-10" />
+
+            {/* Tombol Panah Kiri */}
+            <button 
+              onClick={() => handleScroll(popularRef, 'left')}
+              className="absolute left-1 top-1/2 -translate-y-1/2 bg-white shadow-md p-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 z-20 cursor-pointer opacity-90 hover:opacity-100 transition"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft size={20} />
+            </button>
+
+            {/* Tombol Panah Kanan */}
+            <button 
+              onClick={() => handleScroll(popularRef, 'right')}
+              className="absolute right-1 top-1/2 -translate-y-1/2 bg-white shadow-md p-2 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 z-20 cursor-pointer opacity-90 hover:opacity-100 transition"
+              aria-label="Scroll right"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        </section>
+
+        {/* 6. Tombol Lihat Lainnya (Menuju ke /events) */}
+        <div className="flex justify-center pt-2">
           <Link 
-            href="/events" // ⚠️ Sesuaikan /events dengan nama folder route browse event kamu (misal: /events, /browse, dll)
-            className="w-full max-w-xs sm:max-w-md rounded-full border-2 border-amber-400/80 bg-amber-50/20 py-3 text-center text-sm font-bold text-amber-500 transition hover:bg-amber-400 hover:text-white shadow-xs block"
+            href="/events"
+            className="w-full max-w-md py-3.5 border-2 border-amber-500 text-amber-600 font-bold rounded-full text-sm hover:bg-amber-50 transition shadow-sm text-center block cursor-pointer"
           >
             Lihat Lainnya
           </Link>
         </div>
+
       </main>
 
       {/* 7. Footer */}

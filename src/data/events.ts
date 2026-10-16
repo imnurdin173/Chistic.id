@@ -1,140 +1,143 @@
 export interface EventItem {
   id: string;
   title: string;
-  category: string;
   location: string;
-  city: string;
+  date: string;
   price: number;
   originalPrice?: number;
-  date: string;
   image: string;
-  status: 'normal' | 'almost-sold' | 'sold-out';
-  almostSoldText?: string;
-  // Field Tambahan untuk Presale & Progress
+  landscapeImage?: string;
   isPresale?: boolean;
-  presaleTag?: string; // contoh: 'Presale 1'
-  presaleEndAt?: {
-    days: number;
-    hours: number;
-    minutes: number;
-  };
-  progressPercent?: number; // Nilai 0 - 100 untuk progress bar
-  stockStatusText?: string; // contoh: 'Hampir Habis' atau 'Limited Stock'
+  isHot?: boolean;
+  isPopular?: boolean;
+  presaleTag?: string;
+  status?: 'available' | 'sold-out';
+  category?: string;
+  organizer?: string;
+  description?: string;
 }
+
+export const CATEGORIES = [
+  'Concert',
+  'Festival',
+  'Workshop',
+  'Standup Comedy',
+  'EDM Party',
+];
+
+export const LOCATIONS = [
+  'North Jakarta, Jakarta',
+  'Central Jakarta, Jakarta',
+  'South Jakarta, Jakarta',
+  'Bandung, West Java',
+  'Bali, Indonesia',
+  'Surabaya, East Java',
+  'Yogyakarta, DI Yogyakarta',
+];
 
 export const DUMMY_EVENTS: EventItem[] = [
   {
     id: '1',
     title: 'Night Symphony: Classic Meets Rock',
-    category: 'Concert',
     location: 'North Jakarta, Jakarta',
-    city: 'Jakarta',
-    price: 89000,
-    originalPrice: 150000,
-    date: '19 Desember 2026',
+    date: '2026-12-19T19:00:00',
+    price: 50000,
+    originalPrice: 100000,
     image: '/images/img-event-1-sq.jpg',
-    status: 'almost-sold',
+    landscapeImage: '/images/img-event-1-ls.jpg',
     isPresale: true,
+    isHot: true,
+    isPopular: true,
     presaleTag: 'Presale 1',
-    presaleEndAt: { days: 0, hours: 2, minutes: 15 },
-    progressPercent: 85,
-    stockStatusText: 'Hampir Habis',
+    category: 'Concert',
   },
   {
     id: '2',
     title: 'Electronic Space Night: Neon Odyssey',
-    category: 'Concert',
     location: 'North Jakarta, Jakarta',
-    city: 'Jakarta',
-    price: 120000,
-    originalPrice: 180000,
-    date: '20 Desember 2026',
+    date: '2027-03-20T21:00:00',
+    price: 50000,
+    originalPrice: 100000,
     image: '/images/img-event-2-sq.jpg',
-    status: 'normal',
+    landscapeImage: '/images/img-event-2-ls.jpg',
     isPresale: true,
-    presaleTag: 'Presale 2',
-    presaleEndAt: { days: 1, hours: 5, minutes: 30 },
-    progressPercent: 60,
-    stockStatusText: 'Hampir Habis',
+    isHot: true,
+    isPopular: true,
+    presaleTag: 'Presale 1',
+    category: 'EDM Party',
   },
   {
     id: '3',
     title: 'Jazz Evening at the Park',
-    category: 'Festival',
-    location: 'South Jakarta, Jakarta',
-    city: 'Jakarta',
-    price: 75000,
-    originalPrice: 100000,
-    date: '21 Desember 2026',
+    location: 'Central Jakarta, Jakarta',
+    date: '2027-02-06T17:00:00',
+    price: 88000,
+    originalPrice: 120000,
     image: '/images/img-event-3-sq.jpg',
-    status: 'normal',
+    landscapeImage: '/images/img-event-3-ls.jpg',
     isPresale: true,
-    presaleTag: 'Presale 1',
-    presaleEndAt: { days: 0, hours: 8, minutes: 45 },
-    progressPercent: 90,
-    stockStatusText: 'Hampir Habis',
+    isHot: true,
+    isPopular: true,
+    presaleTag: 'Presale 2',
+    category: 'Concert',
   },
   {
     id: '4',
     title: 'Indie Music Summit & Showcase',
-    category: 'Festival',
     location: 'Bandung, West Java',
-    city: 'Bandung',
-    price: 60000,
+    date: '2026-11-15T16:00:00',
+    price: 65000,
     originalPrice: 90000,
-    date: '22 Desember 2026',
     image: '/images/img-event-4-sq.jpg',
-    status: 'almost-sold',
-    almostSoldText: 'Only 10 Spot Left!',
+    landscapeImage: '/images/img-event-4-ls.jpg',
+    isPresale: true,
+    isHot: false,
+    isPopular: true,
+    presaleTag: 'Early Bird',
+    category: 'Festival',
   },
   {
     id: '5',
-    title: 'Tech Startup Conference 2026',
-    category: 'Seminar',
-    location: 'Central Jakarta, Jakarta',
-    city: 'Jakarta',
-    price: 250000,
-    originalPrice: 350000,
-    date: '23 Desember 2026',
+    title: 'Urban Soundwave Festival 2026',
+    location: 'South Jakarta, Jakarta',
+    date: '2026-11-28T18:00:00',
+    price: 75000,
+    originalPrice: 110000,
     image: '/images/img-event-5-sq.jpg',
-    status: 'sold-out',
+    landscapeImage: '/images/img-event-5-ls.jpg',
+    isPresale: true,
+    isHot: true,
+    isPopular: false,
+    presaleTag: 'Presale 1',
+    category: 'Festival',
   },
   {
     id: '6',
-    title: 'Standup Comedy Special: Local Pride',
-    category: 'Comedy',
-    location: 'Bandung, West Java',
-    city: 'Bandung',
-    price: 50000,
-    date: '24 Desember 2026',
+    title: 'Resonance Night Live Showcase',
+    location: 'South Jakarta, Jakarta',
+    date: '2026-11-15T18:30:00',
+    price: 89000,
+    originalPrice: 100000,
     image: '/images/img-event-6-sq.jpg',
-    status: 'normal',
+    landscapeImage: '/images/img-event-6-ls.jpg',
+    isPresale: false,
+    isHot: true,
+    isPopular: true,
+    status: 'sold-out',
+    category: 'Concert',
   },
   {
     id: '7',
-    title: 'Yogyakarta Cultural Art Festival',
-    category: 'Festival',
-    location: 'Yogyakarta City, Yogyakarta',
-    city: 'Yogyakarta',
-    price: 35000,
-    originalPrice: 50000,
-    date: '27 Desember 2026',
+    title: 'Standup Comedy Special: Local Pride',
+    location: 'Bandung, West Java',
+    date: '2026-12-05T20:00:00',
+    price: 50000,
     image: '/images/img-event-7-sq.jpg',
-    status: 'almost-sold',
-    almostSoldText: 'Only 5 Spot Left!',
-  },
-  {
-    id: '8',
-    title: 'Surabaya Youth Creative Expo',
-    category: 'Seminar',
-    location: 'Surabaya, East Java',
-    city: 'Surabaya',
-    price: 45000,
-    date: '29 Desember 2026',
-    image: '/images/img-event-8-sq.jpg',
-    status: 'normal',
+    landscapeImage: '/images/img-event-7-ls.jpg',
+    isPresale: false,
+    isHot: true,
+    isPopular: true,
+    status: 'available',
+    category: 'Standup Comedy',
   },
 ];
-
-export const CATEGORIES = ['All', 'Concert', 'Festival', 'Comedy', 'Seminar'];
-export const LOCATIONS = ['All', 'Jakarta', 'Bandung', 'Surabaya', 'Yogyakarta'];
