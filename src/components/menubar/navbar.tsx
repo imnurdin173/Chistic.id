@@ -73,13 +73,13 @@ export default function NavbarNotLoggedIn() {
 
           <div className="ml-auto hidden items-center gap-3 md:flex">
             <Link
-              href="#"
+              href="/login"
               className="rounded-full border border-amber-500 px-7 py-2 text-base font-bold text-amber-700 transition-colors hover:bg-amber-200"
             >
               Login
             </Link>
             <Link
-              href="#"
+              href="/register"
               className="rounded-full border border-amber-500 bg-amber-500 px-7 py-2 text-base font-bold text-white transition-colors hover:bg-amber-600"
             >
               Register

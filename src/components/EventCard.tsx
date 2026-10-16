@@ -5,55 +5,103 @@ import { EventItem } from '@/data/events';
 
 interface EventCardProps {
   event: EventItem;
+  isPresaleSection?: boolean;
 }
 
-export default function EventCard({ event }: EventCardProps) {
+export default function EventCard({ event, isPresaleSection = false }: EventCardProps) {
   return (
-    <div className="relative bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col justify-between transition-transform hover:-translate-y-1 w-full">
-      {event.status === 'almost-sold' && (
-        <div className="absolute top-3 left-0 z-10 bg-amber-600 text-white text-xs font-bold px-3 py-1.5 rounded-r shadow-md uppercase tracking-wider">
-          Almost Sold Out!
-        </div>
-      )}
-      {event.status === 'sold-out' && (
-        <div className="absolute top-3 left-0 z-10 bg-red-800 text-white text-xs font-bold px-3 py-1.5 rounded-r shadow-md uppercase tracking-wider">
-          Sold Out
-        </div>
-      )}
+    <div className="relative flex w-full flex-col justify-between overflow-hidden rounded-2xl bg-white shadow-sm transition-transform hover:-translate-y-1">
+      
+      {/* Poster Image Container */}
+      <div className={`relative h-44 w-full overflow-hidden bg-slate-900 ${event.status === 'sold-out' ? 'opacity-50' : ''}`}>
+        
+        {/* Badge Limited Stock (#FD9A00) */}
+        {isPresaleSection && (
+          <div className="absolute top-2 left-0 z-10 rounded-r-md bg-[#FD9A00] px-2.5 py-1 text-[10px] font-black leading-tight text-white uppercase shadow-sm">
+            Limited<br />Stock
+          </div>
+        )}
 
-      {/* Poster Image Area */}
-      <div className={`relative h-44 bg-slate-900 ${event.status === 'sold-out' ? 'opacity-60' : ''}`} />
+        <img
+          src={event.image}
+          alt={event.title}
+          className="h-full w-full object-cover"
+        />
+      </div>
 
-      {/* Card Body */}
-      <div className={`p-4 flex flex-col justify-between flex-1 ${event.status === 'sold-out' ? 'bg-gray-100' : 'bg-white'}`}>
+      {/* Content Body */}
+      <div className="flex flex-1 flex-col justify-between p-3.5 bg-white">
         <div>
-          <p className="text-xs text-gray-500">{event.location}</p>
-          <h4 className="font-bold text-gray-900 text-sm mt-1 line-clamp-2 leading-snug">
+          <p className="text-[11px] text-gray-400 font-medium">{event.location}</p>
+          <h3 className="mt-0.5 line-clamp-2 text-xs font-bold leading-snug text-gray-900 md:text-sm">
             {event.title}
-          </h4>
+          </h3>
         </div>
 
-        {/* Price Section */}
-        <div className="mt-3 flex flex-col">
-          {event.status === 'sold-out' ? (
-            <span className="text-red-800 font-bold text-sm mt-2">Sold Out</span>
-          ) : (
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-gray-400">Start from</span>
-                {event.almostSoldText && (
-                  <span className="text-[10px] text-amber-700 italic font-medium">
-                    {event.almostSoldText}
-                  </span>
-                )}
+        <div className="mt-3">
+          {/* TAMPILAN PRESALE */}
+          {isPresaleSection ? (
+            <div className="space-y-2">
+              <div className="flex items-end justify-between">
+                {/* Tag Presale dengan gradasi #FD9A00 ke #8D0F0F */}
+                <div 
+                  className="flex items-center gap-1 rounded-md px-2.5 py-1 text-white shadow-xs"
+                  style={{ background: 'linear-gradient(90deg, #FD9A00 0%, #8D0F0F 100%)' }}
+                >
+                  <span className="text-[11px] font-black tracking-wide">Presale</span>
+                  <span className="text-[10px]">⚡</span>
+                </div>
+
+                <div className="flex flex-col items-end">
+                  <span className="text-[9px] text-gray-400 font-semibold mb-0.5">Ends at</span>
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-gray-700">
+                    <span className="rounded bg-gray-200/80 px-1.5 py-0.5">60</span>
+                    <span>:</span>
+                    <span className="rounded bg-gray-200/80 px-1.5 py-0.5">60</span>
+                    <span>:</span>
+                    <span className="rounded bg-gray-200/80 px-1.5 py-0.5">60</span>
+                  </div>
+                </div>
               </div>
-              
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-amber-600 font-bold text-base">
+
+              {/* Teks Harga Presale (#8D0F0F) */}
+              <div className="flex items-baseline gap-1.5 pt-0.5">
+                <span className="text-base font-extrabold text-[#8D0F0F]">
                   Rp{event.price.toLocaleString('id-ID')}
                 </span>
                 {event.originalPrice && (
-                  <span className="text-xs text-gray-400 line-through">
+                  <span className="text-[11px] text-gray-400 line-through">
+                    Rp{event.originalPrice.toLocaleString('id-ID')}
+                  </span>
+                )}
+              </div>
+
+              {/* Progress Bar dengan gradasi #FD9A00 ke #8D0F0F */}
+              <div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+                  <div
+                    className="h-full rounded-full"
+                    style={{ 
+                      width: `${event.progressPercent || 80}%`,
+                      background: 'linear-gradient(90deg, #FD9A00 0%, #8D0F0F 100%)'
+                    }}
+                  />
+                </div>
+                <div className="mt-1 text-right text-[9px] font-extrabold text-[#8D0F0F]">
+                  Hampir Habis
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* TAMPILAN HOT & POPULAR EVENT (CARD POLOS) - Warna Harga Amber/Oranye Terang Sesuai Desain */
+            <div className="flex flex-col pt-1">
+              <span className="text-[10px] text-gray-400 font-medium">Start from</span>
+              <div className="mt-0.5 flex items-baseline gap-1.5">
+                <span className="text-base font-extrabold text-[#FD9A00]">
+                  Rp{event.price.toLocaleString('id-ID')}
+                </span>
+                {event.originalPrice && (
+                  <span className="text-[11px] text-gray-400 line-through">
                     Rp{event.originalPrice.toLocaleString('id-ID')}
                   </span>
                 )}
