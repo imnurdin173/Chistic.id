@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Sidebar from "@/components/SidebarDashboard";
+import Sidebar from "@/components/sidebar/SidebarDashboard";
 import TransactionFilters from "@/components/dashboard/transactions/TransactionFilters";
 import TransactionTable from "@/components/dashboard/transactions/TransactionTable";
 import ReviewAction from "@/components/dashboard/transactions/ReviewAction";

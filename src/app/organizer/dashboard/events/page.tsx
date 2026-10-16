@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
-import Sidebar from "@/components/SidebarDashboard";
+import Sidebar from "@/components/sidebar/SidebarDashboard";
 import EventStatusBadge from "@/components/dashboard/events/EventStatusBadge";
 import PublishConfirmAction from "@/components/dashboard/events/PublishConfirmAction";
 import AttendeeListAction from "@/components/dashboard/events/AttendeeListAction";
@@ -225,10 +225,10 @@ export default function Eventspage() {
                                   setEditTarget(event);
                                   setIsEditActionOpen(true);
                                 }}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-[#BB4D00] hover:bg-[#FFF5ED] transition-colors"
+                                className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-[#BB4D00] hover:bg-[#FFF5ED] transition-colors cursor-pointer"
                                 title="Edit Event"
                               >
-                                <PencilSquareIcon className="w-4.5 h-4.5" />
+                                <PencilSquareIcon className="w-4.5 h-4.5 text-black/80 hover:text-[#BB4D00]" />
                               </button>
                             )}
 
@@ -241,7 +241,7 @@ export default function Eventspage() {
                                 className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
                                 title="See Attendee List"
                               >
-                                <UserGroupIcon className="w-4.5 h-4.5" />
+                                <UserGroupIcon className="w-4.5 h-4.5 text-black/80 hover:text-emerald-600" />
                               </button>
                             )}
 
@@ -252,9 +252,9 @@ export default function Eventspage() {
                                   setIsQRActionOpen(true);
                                 }}
                                 className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-                                title="Publish Event"
+                                title="Scan QR"
                               >
-                                <QrCodeIcon className="w-4.5 h-4.5" />
+                                <QrCodeIcon className="w-4.5 h-4.5 text-black/80 hover:text-blue-600" />
                               </button>
                             )}
 
@@ -265,9 +265,9 @@ export default function Eventspage() {
                                   setIsPublishActionOpen(true);
                                 }}
                                 className="w-8 h-8 flex items-center justify-center rounded-lg text-amber-400 hover:text-amber-500 hover:bg-amber-50 transition-colors cursor-pointer"
-                                title="View Summary Event"
+                                title="Publish Event"
                               >
-                                <ArrowUpCircleIcon className="w-4.5 h-4.5" />
+                                <ArrowUpCircleIcon className="w-4.5 h-4.5 text-amber-500" />
                               </button>
                             )}
 
@@ -277,7 +277,7 @@ export default function Eventspage() {
                                 className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-purple-500 hover:bg-purple-50 transition-colors cursor-pointer"
                                 title="View Summary Event"
                               >
-                                <ChartBarIcon className="w-4.5 h-4.5" />
+                                <ChartBarIcon className="w-4.5 h-4.5 text-black/80 hover:text-purple-500" />
                               </button>
                             )}
                           </div>

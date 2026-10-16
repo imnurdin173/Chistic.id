@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import SidebarDashboard from "@/components/SidebarDashboard";
+import SidebarDashboard from "@/components/sidebar/SidebarDashboard";
 import { ChevronRightIcon, HomeIcon } from "@heroicons/react/24/outline";
 import { EventFormData } from "@/types/event";
 

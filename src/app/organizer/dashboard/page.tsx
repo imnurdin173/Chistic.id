@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import Sidebar from "@/components/SidebarDashboard";
+import Sidebar from "@/components/sidebar/SidebarDashboard";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import {
