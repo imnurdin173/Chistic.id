@@ -9,7 +9,8 @@ import {
   ReceiptPercentIcon,// Untuk Transactions
   UserGroupIcon,     // Untuk Attendee list
   TicketIcon,        // Untuk Voucher
-  StarIcon,          // Untuk Reviews
+  StarIcon,
+  QrCodeIcon,          // Untuk Reviews
 } from "@heroicons/react/24/outline";
 
 export default function Sidebar() {
@@ -22,6 +23,8 @@ export default function Sidebar() {
     { name: "Attendee list", href: "/organizer/dashboard/attendees", icon: UserGroupIcon },
     { name: "Voucher", href: "/organizer/dashboard/vouchers", icon: TicketIcon },
     { name: "Reviews", href: "/organizer/dashboard/reviews", icon: StarIcon },
+    { name: "QR Scan", href: "/organizer/dashboard/qr", icon: QrCodeIcon },
+    
   ];
 
   return (
