@@ -8,6 +8,8 @@ import {
   ArrowUpTrayIcon,
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
+import Footer from "@/components/menubar/footer";
+import NavbarNotLoggedIn from "@/components/menubar/navbar";
 
 export default function OrganizerOverviewPage() {
   const [selectedEventFilter, setSelectedEventFilter] = useState("All event");
@@ -83,28 +85,26 @@ export default function OrganizerOverviewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 font-sans flex flex-col justify-between">
+      <NavbarNotLoggedIn />
+      <div className="flex-1 w-full p-4 md:p-8">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
         
-        {/* Pasang Sidebar */}
         <Sidebar />
 
-        {/* Konten Utama Overview */}
         <main 
         ref={reportRef}
         className="flex-1 w-full bg-white rounded-2xl p-6 md:p-8 shadow-xs border border-neutral-100">
           
-          {/* Header & Filter Controls */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <h1 className="text-xl md:text-2xl font-bold text-neutral-900">
               Overview
             </h1>
 
-            {/* Filter Dropdowns & Export Button */}
             <div 
             data-html2canvas-ignore="true"
             className="flex flex-wrap items-center gap-2.5">
-              {/* Filter 1: Event */}
+
               <div className="relative">
                 <select
                   value={selectedEventFilter}
@@ -118,7 +118,6 @@ export default function OrganizerOverviewPage() {
                 <ChevronDownIcon className="w-4 h-4 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
 
-              {/* Filter 2: Periode Waktu */}
               <div className="relative">
                 <select
                   value={selectedTimeFilter}
@@ -132,7 +131,6 @@ export default function OrganizerOverviewPage() {
                 <ChevronDownIcon className="w-4 h-4 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
 
-              {/* Button Export PDF dengan ArrowUpTrayIcon */}
               <button
                 onClick={handleExportPDF}
                 disabled={isExporting}
@@ -144,7 +142,6 @@ export default function OrganizerOverviewPage() {
             </div>
           </div>
 
-          {/* Stats Cards (4 Kotak Metrik) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="border border-neutral-200 rounded-xl p-4 flex flex-col justify-between">
               <div>
@@ -195,7 +192,6 @@ export default function OrganizerOverviewPage() {
             </div>
           </div>
 
-          {/* Bar Chart */}
           <div className="border border-neutral-200 rounded-xl p-5 mb-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-base font-bold text-neutral-900">
@@ -235,7 +231,6 @@ export default function OrganizerOverviewPage() {
             </div>
           </div>
 
-          {/* Popular Events Table */}
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-base font-bold text-neutral-900">
@@ -276,7 +271,10 @@ export default function OrganizerOverviewPage() {
           </div>
 
         </main>
+        </div>
+
       </div>
+      <Footer />
     </div>
   );
 }

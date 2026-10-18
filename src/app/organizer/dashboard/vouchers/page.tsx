@@ -7,6 +7,8 @@ import VoucherStatusBadge from "@/components/dashboard/vouchers/VoucherStatusBad
 import { VoucherItem, VoucherFormData } from "@/types/voucher";
 import { MagnifyingGlassIcon, PlusIcon, PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { tr } from "zod/locales";
+import Footer from "@/components/menubar/footer";
+import NavbarNotLoggedIn from "@/components/menubar/navbar";
 
 const INITIAL_VOUCHERS: VoucherItem[] = [
   {
@@ -61,7 +63,9 @@ export default function VouchersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 font-sans flex flex-col justify-between">
+      <NavbarNotLoggedIn />
+      <div className="flex-1 w-full p-4 md:p-8">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
         <Sidebar />
 
@@ -158,7 +162,9 @@ export default function VouchersPage() {
             Showing 1 - {filteredVouchers.length} of {filteredVouchers.length}
           </div>
         </main>
+        </div>
       </div>
+      <Footer />
     </div>
   );
 }

@@ -9,6 +9,8 @@ import QRListAction from "@/components/dashboard/events/QRListAction";
 import EditEventAction from "@/components/dashboard/events/EditEventAction";
 import { EventItem, EventStatus } from "@/types/event";
 import { PencilSquareIcon, UserGroupIcon, QrCodeIcon, ArrowUpCircleIcon, ChartBarIcon, MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/outline";
+import NavbarNotLoggedIn from "@/components/menubar/navbar";
+import Footer from "@/components/menubar/footer";
 
 const DUMMY_EVENTS: EventItem[] = [
   {
@@ -143,7 +145,9 @@ export default function Eventspage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 font-sans flex flex-col justify-between">
+      <NavbarNotLoggedIn />
+      <div className="flex-1 w-full p-4 md:p-8">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
         <Sidebar />
 
@@ -291,6 +295,7 @@ export default function Eventspage() {
           </div>
         </main>
       </div>
+      </div>
 
       <PublishConfirmAction
         isOpen={isPublishActionOpen}
@@ -330,6 +335,7 @@ export default function Eventspage() {
         onSave={handleSaveEdit}
         onEndEvent={handleEndEvent}
       />
+      <Footer />
     </div>
   );
 }
