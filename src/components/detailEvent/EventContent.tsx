@@ -57,7 +57,7 @@ export default function EventContent({ event }: EventContentProps) {
         </div>
 
         {/* Kolom Kanan */}
-        <div className="lg:col-span-4 sticky top-20">
+        <div className="lg:col-span-4 top-20 mt-12">
           <EventOrderSidebar event={event} />
         </div>
 

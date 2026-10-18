@@ -18,6 +18,10 @@ const formatRupiah = (val?: number) => {
 export default function EventCard({ variant = 'standard', event }: EventCardProps) {
   const isPresale = variant === 'presale';
 
+  // Format harga agar tidak error 'Cannot find name'
+  const priceFormatted = formatRupiah(event.price);
+  const originalPriceFormatted = event.originalPrice ? formatRupiah(event.originalPrice) : null;
+
   const [timeLeft, setTimeLeft] = useState({
     hours: '00',
     minutes: '00',
@@ -62,7 +66,7 @@ export default function EventCard({ variant = 'standard', event }: EventCardProp
       <Link href={`/events/${event.id}`} className="block">
         <div className="w-[331px] h-[325px] bg-white rounded-2xl shadow-md overflow-hidden flex flex-col justify-between relative group cursor-pointer hover:shadow-lg transition-all duration-200">
           
-          {/* Container Poster & Badge Limited Stock */}
+          {/* Container Poster */}
           <div className="relative w-full h-[175px] bg-gray-900 overflow-hidden m-0 p-0">
             <Image
               src={event.landscapeImage || event.image}
@@ -113,11 +117,11 @@ export default function EventCard({ variant = 'standard', event }: EventCardProp
 
             <div className="flex items-baseline gap-1.5 mt-1">
               <span className="text-sm font-extrabold text-[#D95300]">
-                {formatRupiah(event.price)}
+                {priceFormatted}
               </span>
-              {event.originalPrice && (
+              {originalPriceFormatted && (
                 <span className="text-[11px] text-gray-400 line-through">
-                  {formatRupiah(event.originalPrice)}
+                  {originalPriceFormatted}
                 </span>
               )}
             </div>
@@ -175,11 +179,11 @@ export default function EventCard({ variant = 'standard', event }: EventCardProp
             <span className="text-[10px] text-gray-400 block font-medium">Start from</span>
             <div className="flex items-baseline gap-1.5">
               <span className="text-sm font-extrabold text-[#D95300]">
-                {formatRupiah(event.price)}
+                {priceFormatted}
               </span>
-              {event.originalPrice && (
+              {originalPriceFormatted && (
                 <span className="text-[11px] text-gray-400 line-through">
-                  {formatRupiah(event.originalPrice)}
+                  {originalPriceFormatted}
                 </span>
               )}
             </div>

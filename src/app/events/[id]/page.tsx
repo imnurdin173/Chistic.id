@@ -6,16 +6,22 @@ import { DUMMY_EVENTS } from '@/data/events';
 import { notFound } from 'next/navigation';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function EventDetailPage({ params }: PageProps) {
-  const event = DUMMY_EVENTS.find((e) => String(e.id) === String(params.id)) || DUMMY_EVENTS[0];
+export default async function EventDetailPage({ params }: PageProps) {
+  // 1. Unwrap params menggunakan await (Standar Next.js App Router)
+  const resolvedParams = await params;
+  const eventId = resolvedParams.id;
 
+  // 2. Cari event berdasarkan ID yang dikirimkan dari card
+  const event = DUMMY_EVENTS.find((e) => String(e.id) === String(eventId));
+
+  // 3. Jika event tidak ditemukan di dalam data, tampilkan halaman 404
   if (!event) {
-    return notFound();
+    notFound();
   }
 
   return (
