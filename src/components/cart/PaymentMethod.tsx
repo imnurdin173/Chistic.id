@@ -1,39 +1,58 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { CreditCard } from 'lucide-react';
-import Link from 'next/link';
+import React from "react";
+import { useRouter } from "next/navigation";
 
-export default function PaymentMethod() {
+interface PaymentMethodProps {
+  totalAmount: number;
+  quantity?: number;
+}
+
+export default function PaymentMethod({ totalAmount, quantity = 1 }: PaymentMethodProps) {
+  const router = useRouter();
+
+  const handleCheckout = () => {
+    // Simpan totalAmount dan quantity ke sessionStorage agar dibaca di halaman /cart/payment
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("chistix_total_amount", totalAmount.toString());
+      sessionStorage.setItem("chistix_ticket_qty", quantity.toString());
+    }
+    
+    // Pindah ke halaman payment (bisa juga bawa query param sebagai fallback)
+    router.push(`/cart/payment?amount=${totalAmount}&qty=${quantity}`);
+  };
+
   return (
-    <div className="bg-white rounded-2xl border border-gray-200/80 p-5 shadow-sm space-y-4">
-      <h3 className="text-xs font-bold text-gray-900 flex items-center gap-2">
-        <CreditCard size={14} className="text-amber-500" />
-        Payment Method
-      </h3>
-      
-      {/* Pilihan Metode Pembayaran */}
-      <div className="grid grid-cols-4 gap-2 py-1">
-        <div className="border border-gray-200 rounded-lg p-2.5 flex items-center justify-center bg-gray-50 hover:border-amber-400 cursor-pointer transition">
-          <span className="text-[10px] font-bold text-blue-600">DANA</span>
-        </div>
-        <div className="border border-gray-200 rounded-lg p-2.5 flex items-center justify-center bg-gray-50 hover:border-amber-400 cursor-pointer transition">
-          <span className="text-[10px] font-bold text-red-600">QRIS</span>
-        </div>
-        <div className="border border-gray-200 rounded-lg p-2.5 flex items-center justify-center bg-gray-50 hover:border-amber-400 cursor-pointer transition">
-          <span className="text-[10px] font-bold text-orange-600">Shopee</span>
-        </div>
-        <div className="border border-gray-200 rounded-lg p-2.5 flex items-center justify-center bg-gray-50 hover:border-amber-400 cursor-pointer transition">
-          <span className="text-[10px] font-bold text-sky-600">midtrans</span>
-        </div>
+    <div className="space-y-4">
+      <h2 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wide">
+        <span>💳</span> PAYMENT METHOD
+      </h2>
+
+      {/* Baris Logo Pembayaran */}
+      <div className="flex items-center justify-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+        <span className="px-3 py-1 bg-white rounded border border-slate-200 text-xs font-bold text-blue-600 shadow-2xs">
+          DANA
+        </span>
+        <span className="px-3 py-1 bg-white rounded border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs">
+          QRIS
+        </span>
+        <span className="px-3 py-1 bg-white rounded border border-slate-200 text-xs font-bold text-orange-600 shadow-2xs">
+          ShopeePay
+        </span>
+        <span className="px-3 py-1 bg-white rounded border border-slate-200 text-xs font-bold text-sky-600 shadow-2xs">
+          midtrans
+        </span>
       </div>
 
       {/* Tombol Check Out */}
-      <div className="pt-1">
-        <button className="w-full py-3 bg-[#FFA000] text-white font-bold text-xs rounded-full shadow-md hover:bg-amber-600 transition cursor-pointer">
-          Check Out
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={handleCheckout}
+        disabled={totalAmount <= 0}
+        className="w-full py-3 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 disabled:bg-slate-300 text-white font-bold text-sm rounded-xl transition-colors shadow-xs cursor-pointer"
+      >
+        Check Out
+      </button>
     </div>
   );
 }
