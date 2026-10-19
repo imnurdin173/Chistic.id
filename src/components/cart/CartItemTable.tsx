@@ -32,7 +32,6 @@ export default function CartItemTable({ quantity, setQuantity }: CartItemTablePr
       </h2>
 
       <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-4">
-        {/* Detail Event & Kategori */}
         <div className="flex items-start gap-3">
           <div className="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center shrink-0 border border-emerald-200">
             <span className="text-2xl">🎫</span>
@@ -49,9 +48,7 @@ export default function CartItemTable({ quantity, setQuantity }: CartItemTablePr
           </div>
         </div>
 
-        {/* Tombol Kontrol Kuantitas & Harga */}
         <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-          {/* Tombol - dan + */}
           <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden shadow-2xs">
             <button
               type="button"
@@ -73,7 +70,6 @@ export default function CartItemTable({ quantity, setQuantity }: CartItemTablePr
             </button>
           </div>
 
-          {/* Total Harga per Item & Harga Satuan */}
           <div className="text-right">
             <div className="text-base font-extrabold text-slate-800">
               {formatRupiah(totalPrice)}

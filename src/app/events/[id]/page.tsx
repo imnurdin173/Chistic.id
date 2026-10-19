@@ -12,14 +12,10 @@ interface PageProps {
 }
 
 export default async function EventDetailPage({ params }: PageProps) {
-  // 1. Unwrap params menggunakan await (Standar Next.js App Router)
   const resolvedParams = await params;
   const eventId = resolvedParams.id;
-
-  // 2. Cari event berdasarkan ID yang dikirimkan dari card
   const event = DUMMY_EVENTS.find((e) => String(e.id) === String(eventId));
 
-  // 3. Jika event tidak ditemukan di dalam data, tampilkan halaman 404
   if (!event) {
     notFound();
   }
