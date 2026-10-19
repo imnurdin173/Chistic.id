@@ -11,6 +11,7 @@ import {
 import {BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid} from "recharts"
 import Footer from "@/components/menubar/footer";
 import NavbarNotLoggedIn from "@/components/menubar/navbar";
+import Link from "next/link";
 
 export default function OrganizerOverviewPage() {
   const [selectedEventFilter, setSelectedEventFilter] = useState("All event");
@@ -287,12 +288,12 @@ export default function OrganizerOverviewPage() {
               <h2 className="text-base font-bold text-neutral-900">
                 The most your popular event
               </h2>
-              <button 
-                onClick={() => alert("Navigasi ke Manage Events")}
+              <Link 
+                href="/organizer/dashboard/events"
                 className="text-xs md:text-sm font-semibold text-[#BB4D00] hover:underline cursor-pointer"
               >
                 Manage events
-              </button>
+              </Link>
             </div>
 
             <div className="overflow-x-auto">

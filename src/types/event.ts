@@ -1,4 +1,4 @@
-export type EventStatus = "UPCOMMING" | "DRAFT" | "ENDED"
+export type EventStatus = "UPCOMING" | "DRAFT" | "ENDED" | "ON STAGE"
 
 export interface TicketTier {
     id: string
