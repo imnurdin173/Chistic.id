@@ -7,6 +7,7 @@ import EventsTab from "@/components/customer/dashboard/EventsTab";
 import TransactionsTab from "@/components/customer/dashboard/TransactionsTab";
 import CheckInTab from "@/components/customer/dashboard/CheckInTab";
 import ReviewsTab from "@/components/customer/dashboard/ReviewsTab";
+import NavbarNotLoggedIn from "@/components/menubar/navbar";
 
 export type TabType = "overview" | "events" | "transactions" | "checkin" | "reviews";
 
@@ -14,7 +15,9 @@ export default function CustomerDashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
 
   return (
+    
     <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 p-4 md:p-8 font-sans">
+      <NavbarNotLoggedIn/>
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
         {/* Sidebar Navigasi Kiri */}
         <CustomerSidebar activeTab={activeTab} setActiveTab={setActiveTab} />

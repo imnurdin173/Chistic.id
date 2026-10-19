@@ -59,7 +59,7 @@ function TicketSuccessContent() {
             </div>
             <div>
               <span className="text-slate-400 block font-medium">👤 Ticket Holder</span>
-              <span className="font-bold text-slate-700">Shalihati M. R.</span>
+              <span className="font-bold text-slate-700">Mutiara</span>
             </div>
             <div>
               <span className="text-slate-400 block font-medium">💳 Total Amount</span>
