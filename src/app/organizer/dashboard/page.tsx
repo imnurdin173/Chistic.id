@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import Sidebar from "@/components/sidebar/SidebarDashboard";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
@@ -8,6 +8,7 @@ import {
   ArrowUpTrayIcon,
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
+import {BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid} from "recharts"
 import Footer from "@/components/menubar/footer";
 import NavbarNotLoggedIn from "@/components/menubar/navbar";
 
@@ -16,20 +17,39 @@ export default function OrganizerOverviewPage() {
   const [selectedTimeFilter, setSelectedTimeFilter] = useState("This Year");
   const [chartPeriod, setChartPeriod] = useState<"Day" | "Month" | "Years">("Years");
 
-  const chartData = [
-    { label: "Jan", height: "35%" },
-    { label: "Feb", height: "60%" },
-    { label: "Mar", height: "85%" },
-    { label: "Apr", height: "65%" },
-    { label: "May", height: "45%" },
-    { label: "Jun", height: "35%" },
-    { label: "Jul", height: "70%" },
-    { label: "Aug", height: "20%" },
-    { label: "Sep", height: "72%" },
-    { label: "Oct", height: "40%" },
-    { label: "Nov", height: "95%" },
-    { label: "Dec", height: "75%" },
-  ];
+  const getLast28Days = () => {
+    const result  = []
+    const today = new Date ()
+
+    for(let i = 27; i >= 0; i--){
+      const d = new Date(today)
+      d.setDate(today.getDate() - i)
+      result.push({
+        label: d.toLocaleDateString("id-ID", {day: "numeric", month: "short"}),
+        sales: Math.floor(Math.random() * 100)
+      })
+    }
+    return result
+  }
+
+  const chartDataByPeriod = useMemo(() => ({
+  Day: getLast28Days(),
+
+  Month: [
+    { label: "Jan", sales: 35 }, { label: "Feb", sales: 60 },
+    { label: "Mar", sales: 85 }, { label: "Apr", sales: 65 },
+    { label: "May", sales: 45 }, { label: "Jun", sales: 35 },
+    { label: "Jul", sales: 70 }, { label: "Aug", sales: 20 },
+    { label: "Sep", sales: 72 }, { label: "Oct", sales: 40 },
+    { label: "Nov", sales: 95 }, { label: "Dec", sales: 75 },
+  ],
+  Years: [
+    { label: "2023", sales: 420 },
+    { label: "2024", sales: 680 },
+    { label: "2025", sales: 890 },
+    { label: "2026", sales: 1212 },
+  ],
+}), []) 
 
   const popularEvents = [
     { name: "Orchestra", attendees: 100, location: "Nepal", date: "01/10/2026", views: 100 },
@@ -40,6 +60,19 @@ export default function OrganizerOverviewPage() {
 
   const reportRef = useRef<HTMLDivElement>(null)
   const [isExporting, setIsExporting] = useState(false)
+
+  const chartColors = {
+  Day: "fill-cyan-600 hover:fill-cyan-900",
+  Month: "fill-violet-500 hover:fill-violet-700",
+  Years: "fill-amber-400 hover:fill-amber-600",
+} as const;
+
+  const handlePeriodChange = (period: "Day" | "Month" | "Years") => {
+  setChartPeriod(period);
+  if (period === "Day") setSelectedTimeFilter("This Month");
+  else if (period === "Month") setSelectedTimeFilter("This Year");
+  else setSelectedTimeFilter("All Time");
+};
 
   const handleExportPDF = async () => {
     if(!reportRef.current) return
@@ -83,6 +116,12 @@ export default function OrganizerOverviewPage() {
       setIsExporting(false)
     }
   };
+
+  useEffect(() => {
+    if(selectedTimeFilter === "This Month") setChartPeriod("Day")
+    else if (selectedTimeFilter === "This Year") setChartPeriod("Month")
+    else setChartPeriod("Years")
+  }, [selectedTimeFilter])
 
   return (
     <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 font-sans flex flex-col justify-between">
@@ -202,7 +241,7 @@ export default function OrganizerOverviewPage() {
                 {(["Day", "Month", "Years"] as const).map((period) => (
                   <button
                     key={period}
-                    onClick={() => setChartPeriod(period)}
+                    onClick={() => handlePeriodChange(period)}
                     className={`px-3 py-1 rounded-full font-medium transition-colors cursor-pointer ${
                       chartPeriod === period
                         ? "bg-amber-100/70 text-amber-800 font-bold border border-amber-300"
@@ -215,20 +254,32 @@ export default function OrganizerOverviewPage() {
               </div>
             </div>
 
-            <div className="h-48 w-full flex items-end justify-between gap-1.5 sm:gap-3 px-2 pt-4">
-              {chartData.map((bar, index) => (
-                <div key={index} className="flex-1 flex flex-col items-center h-full justify-end group">
-                  <div
-                    style={{ height: bar.height }}
-                    className="w-full bg-[#F6D268] hover:bg-[#F3C43D] rounded-t-sm transition-all duration-300 relative cursor-pointer"
-                  >
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-7 left-1/2 -translate-x-1/2 bg-neutral-800 text-white text-[10px] px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap">
-                      {bar.label}: {bar.height}
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="h-48 w-full pt-4 outline-hidden">
+              <ResponsiveContainer width="100%" height="100%" className="outline-hidden">
+                <BarChart data={chartDataByPeriod[chartPeriod]} margin={{top: 10, right: 4, left: 4, bottom: 0}}>
+                  <CartesianGrid vertical={false} stroke="#f0ede8"/>
+                  <XAxis 
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: "#a3a3a3"}}
+                  axisLine={false}
+                  tickLine={false}
+                  />
+                  <YAxis hide/>
+                  <Tooltip 
+                  cursor={false}
+                  contentStyle={{borderRadius: 8, fontSize: 12, border: "1px solid #e5e5e5"}}
+                  formatter={(value) => [`${value} tickets`, "Sales"]}
+                  />
+                  <Bar 
+                  dataKey="sales" 
+                  radius={[4, 4, 0, 0]} 
+                  maxBarSize={48}
+                  className={`transition-colors ${chartColors[chartPeriod]}`}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
+
           </div>
 
           <div>
