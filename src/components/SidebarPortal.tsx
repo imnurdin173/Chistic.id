@@ -4,107 +4,152 @@ import React, { useState } from 'react';
 import { CATEGORIES, LOCATIONS } from '@/data/events';
 
 interface SidebarPortalProps {
-  onFilterChange: (filters: { category: string; location: string; minPrice: string; maxPrice: string }) => void;
+  onFilterChange: (filters: {
+    category: string;
+    location: string;
+    minPrice?: number;
+    maxPrice?: number;
+  }) => void;
   onReset: () => void;
 }
 
 export default function SidebarPortal({ onFilterChange, onReset }: SidebarPortalProps) {
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedLocation, setSelectedLocation] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
 
-  // Fungsi untuk hanya memperbolehkan angka murni (menghapus titik, koma, minus, dll)
+  // Helper function untuk memfilter HANYA angka (mencegah titik, koma, minus, dll)
   const handlePriceChange = (value: string, setter: (val: string) => void) => {
-    const cleanValue = value.replace(/\D/g, ''); // Hapus semua karakter selain 0-9
-    setter(cleanValue);
+    // Hapus semua karakter yang bukan angka (0-9)
+    const cleanNumericValue = value.replace(/[^0-9]/g, '');
+    setter(cleanNumericValue);
   };
 
+  // Mencegah pengetikan simbol seperti '.', ',', 'e', '-', '+' dari keyboard
+  const preventInvalidPriceInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (['.', ',', 'e', 'E', '-', '+'].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  // Handler Tombol Save
   const handleSave = () => {
     onFilterChange({
       category: selectedCategory,
       location: selectedLocation,
-      minPrice,
-      maxPrice,
+      minPrice: minPrice ? Number(minPrice) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
     });
   };
 
-  const handleResetFilter = () => {
-    setSelectedCategory('All');
-    setSelectedLocation('All');
+  // Handler Tombol Reset
+  const handleResetClick = () => {
+    setSelectedCategory('');
+    setSelectedLocation('');
     setMinPrice('');
     setMaxPrice('');
     onReset();
   };
 
   return (
-    <aside className="w-full lg:w-64 h-fit bg-white border border-gray-200 rounded-lg p-5 shadow-sm space-y-5">
-      <div>
-        <label className="block text-sm font-semibold text-gray-800 mb-2">Category</label>
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
-        >
-          {CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat === 'All' ? 'Concert, Seminar, etc' : cat}
-            </option>
-          ))}
-        </select>
+    <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm space-y-4 w-full">
+      {/* 1. Category */}
+      <div className="space-y-1">
+        <label className="block text-sm font-bold text-gray-800">
+          Category
+        </label>
+        <div className="relative">
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full appearance-none bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 focus:outline-none focus:border-amber-500 cursor-pointer pr-8 leading-tight"
+          >
+            <option value="">All Categories</option>
+            {CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-gray-800 mb-2">Location</label>
-        <select
-          value={selectedLocation}
-          onChange={(e) => setSelectedLocation(e.target.value)}
-          className="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
-        >
-          {LOCATIONS.map((loc) => (
-            <option key={loc} value={loc}>
-              {loc === 'All' ? 'Province, City' : loc}
-            </option>
-          ))}
-        </select>
+      {/* 2. Location */}
+      <div className="space-y-1">
+        <label className="block text-sm font-bold text-gray-800">
+          Location
+        </label>
+        <div className="relative">
+          <select
+            value={selectedLocation}
+            onChange={(e) => setSelectedLocation(e.target.value)}
+            className="w-full appearance-none bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 focus:outline-none focus:border-amber-500 cursor-pointer pr-8 leading-tight"
+          >
+            <option value="">All Locations</option>
+            {LOCATIONS.map((loc) => (
+              <option key={loc} value={loc}>
+                {loc}
+              </option>
+            ))}
+          </select>
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-gray-800 mb-2">Price Range</label>
-        <div className="space-y-2">
+      {/* 3. Price Range (Sudah Aman dari Titik / Non-Digit) */}
+      <div className="space-y-1.5">
+        <label className="block text-sm font-bold text-gray-800">
+          Price Range
+        </label>
+        <div className="space-y-1.5">
           <input
             type="text"
             inputMode="numeric"
             placeholder="Minimum Price"
             value={minPrice}
+            onKeyDown={preventInvalidPriceInput}
             onChange={(e) => handlePriceChange(e.target.value, setMinPrice)}
-            className="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium placeholder-gray-400 text-gray-700 focus:outline-none focus:border-amber-500"
           />
           <input
             type="text"
             inputMode="numeric"
             placeholder="Maximum Price"
             value={maxPrice}
+            onKeyDown={preventInvalidPriceInput}
             onChange={(e) => handlePriceChange(e.target.value, setMaxPrice)}
-            className="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium placeholder-gray-400 text-gray-700 focus:outline-none focus:border-amber-500"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-3 pt-1">
+      {/* 4. Action Buttons (Reset & Save) */}
+      <div className="flex items-center gap-2 pt-1">
         <button
-          onClick={handleResetFilter}
-          className="w-1/2 border border-amber-500 text-black hover:bg-amber-50 py-2 rounded-md text-sm font-medium transition-colors"
+          type="button"
+          onClick={handleResetClick}
+          className="flex-1 py-1.5 border border-amber-500 text-amber-600 font-bold text-xs rounded-lg hover:bg-amber-50 transition cursor-pointer text-center"
         >
           Reset
         </button>
         <button
+          type="button"
           onClick={handleSave}
-          className="w-1/2 bg-amber-500 hover:bg-amber-600 text-black py-2 rounded-md text-sm font-medium transition-colors"
+          className="flex-1 py-1.5 bg-[#FF8A00] hover:bg-[#E07B00] text-white font-bold text-xs rounded-lg transition cursor-pointer text-center shadow-sm"
         >
           Save
         </button>
       </div>
-    </aside>
+    </div>
   );
 }

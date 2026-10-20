@@ -13,18 +13,24 @@ enum Role {
 }
 
 model User {
-  id            String    @id
+  id            String   @id
   name          String
   email         String
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean  @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
-  role          Role      @default(CUSTOMER)
-  referralCode  String?
-  points        Int?
-  sessions      Session[]
-  accounts      Account[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  // ---- kolom tambahan milik Chistix ----
+  role         Role          @default(CUSTOMER)
+  referralCode String?
+  points       Decimal?
+  sessions     Session[]
+  accounts     Account[]
+  events       Event[]
+  transactions Transaction[]
+  reviews      Review[]
+
   @@unique([email])
   @@map("user")
 }
@@ -74,7 +80,6 @@ model Verification {
   @@index([identifier])
   @@map("verification")
 }
-
 
 enum EventCategoryEnum {
   MUSIC
