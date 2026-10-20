@@ -1,151 +1,214 @@
 'use client';
 
 import React, { useState } from 'react';
+import Navbar from '@/components/menubar/navbar';
+import Footer from '@/components/menubar/footer';
 import SidebarPortal from '@/components/SidebarPortal';
 import EventCard from '@/components/EventCard';
-import Pagination from '@/components/Pagination';
-import { DUMMY_EVENTS, EventItem } from '@/data/events';
+import { DUMMY_EVENTS } from '@/data/events';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function BrowseEventPage() {
-  const extendedEvents: EventItem[] = [
-    ...DUMMY_EVENTS,
-    {
-      id: '9',
-      title: 'Acoustic Sunset Gathering',
-      category: 'Concert',
-      location: 'South Jakarta, Jakarta',
-      city: 'Jakarta',
-      price: 50000,
-      originalPrice: 75000,
-      date: '30 Desember 2026',
-      image: '/images/img-event-10-sq.jpg',
-      status: 'normal',
-    },
-  ];
-
-  const [events] = useState<EventItem[]>(extendedEvents);
-  const [sortBy, setSortBy] = useState('');
+export default function EventsPage() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('');
+  const [minPrice, setMinPrice] = useState<number | undefined>();
+  const [maxPrice, setMaxPrice] = useState<number | undefined>();
+  const [sortOption, setSortOption] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
-  const [activeFilters, setActiveFilters] = useState({
-    category: 'All',
-    location: 'All',
-    minPrice: '',
-    maxPrice: '',
+  // Menerima filter dari SidebarPortal
+  const handleFilterChange = (filters: {
+    category: string;
+    location: string;
+    minPrice?: number;
+    maxPrice?: number;
+  }) => {
+    setSelectedCategory(filters.category);
+    setSelectedLocation(filters.location);
+    setMinPrice(filters.minPrice);
+    setMaxPrice(filters.maxPrice);
+    setCurrentPage(1); // Kembalikan ke halaman pertama setiap kali filter berubah
+  };
+
+  const handleReset = () => {
+    setSelectedCategory('');
+    setSelectedLocation('');
+    setMinPrice(undefined);
+    setMaxPrice(undefined);
+    setSearchQuery('');
+    setSortOption('');
+    setCurrentPage(1);
+  };
+
+  // Filter Data Event secara presisi (dengan Optional Chaining `?.` agar tidak error jika undefined)
+  const filteredEvents = DUMMY_EVENTS.filter((event) => {
+    const matchCategory = selectedCategory 
+      ? event.category?.toLowerCase() === selectedCategory.toLowerCase() 
+      : true;
+
+    const matchLocation = selectedLocation 
+      ? event.location?.toLowerCase().includes(selectedLocation.toLowerCase()) 
+      : true;
+
+    const matchSearch = searchQuery 
+      ? event.title?.toLowerCase().includes(searchQuery.toLowerCase()) 
+      : true;
+    
+    const matchMinPrice = minPrice !== undefined ? event.price >= minPrice : true;
+    const matchMaxPrice = maxPrice !== undefined ? event.price <= maxPrice : true;
+
+    return matchCategory && matchLocation && matchSearch && matchMinPrice && matchMaxPrice;
   });
 
-  const handleFilterChange = (filters: typeof activeFilters) => {
-    setActiveFilters(filters);
-    setCurrentPage(1);
-  };
-
-  const handleResetFilter = () => {
-    setActiveFilters({
-      category: 'All',
-      location: 'All',
-      minPrice: '',
-      maxPrice: '',
-    });
-    setCurrentPage(1);
-  };
-
-  const filteredEvents = events.filter((item) => {
-    if (activeFilters.category !== 'All' && item.category !== activeFilters.category) return false;
-    if (activeFilters.location !== 'All' && !item.location.includes(activeFilters.location)) return false;
-    if (activeFilters.minPrice && item.price < Number(activeFilters.minPrice)) return false;
-    if (activeFilters.maxPrice && item.price > Number(activeFilters.maxPrice)) return false;
-    return true;
-  }).sort((a, b) => {
-    if (sortBy === 'price-low') return a.price - b.price;
-    if (sortBy === 'price-high') return b.price - a.price;
+  // Sorting Data
+  const sortedEvents = [...filteredEvents].sort((a, b) => {
+    if (sortOption === 'latest') return new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (sortOption === 'popular') return (b.isPopular ? 1 : 0) - (a.isPopular ? 1 : 0);
+    if (sortOption === 'price-low') return a.price - b.price;
+    if (sortOption === 'price-high') return b.price - a.price;
     return 0;
   });
 
-  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage) || 1;
-  const paginatedEvents = filteredEvents.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Pagination
+  const totalPages = Math.ceil(sortedEvents.length / itemsPerPage) || 1;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentEvents = sortedEvents.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#FFFDF7] flex flex-col font-sans">
-      
-      {/* Header Placeholder Slot */}
-      <header className="w-full py-3 px-6 bg-white border-b border-gray-100 text-xs text-gray-400">
-        {/* [Header Component Slot] */}
-      </header>
+    <div className="min-h-screen bg-[#FAF8F5] flex flex-col justify-between">
+      {/* Header Navbar */}
+      <Navbar />
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8 flex flex-col lg:flex-row gap-6 items-start">
-        
-        {/* Sidebar Portal */}
-        <SidebarPortal onFilterChange={handleFilterChange} onReset={handleResetFilter} />
-
-        {/* Content Area */}
-        <div className="flex-1 space-y-6 w-full">
+      <main className="max-w-6xl mx-auto px-4 py-8 w-full">
+        <div className="flex flex-col md:flex-row gap-6 items-start">
           
-          {/* Sorting Bar */}
-          <div className="bg-white border border-gray-200 px-4 py-3 rounded-lg flex items-center gap-4 shadow-sm">
-            <span className="text-sm font-semibold text-gray-800">Sort</span>
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 rounded-md px-3 py-1.5 pr-8 text-sm text-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
-              >
-                <option value="" disabled>Select option</option>
-                <option value="latest">Latest Event</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          {/* Wrapper White Container */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm space-y-6">
-            
-            {/* Search Result Text */}
-            <div>
-              <h2 className="text-base font-semibold text-gray-800">
-                Berikut Hasil Pencarian <span className="text-black font-bold">Night Symphony</span>
-              </h2>
-            </div>
-
-            {/* Grid Card Event */}
-            {paginatedEvents.length === 0 ? (
-              <div className="text-center py-12 text-gray-500 text-sm">
-                Tidak ada event yang ditemukan sesuai filter.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {paginatedEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
-                ))}
-              </div>
-            )}
-
-            {/* Pagination Component */}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
+          {/* Sidebar Portal Kiri */}
+          <aside className="w-full md:w-[240px] flex-shrink-0">
+            <SidebarPortal 
+              onFilterChange={handleFilterChange}
+              onReset={handleReset}
             />
+          </aside>
+
+          {/* Konten Utama Kanan */}
+          <div className="flex-1 w-full space-y-4">
+            
+            {/* 1. Bar Sort */}
+            <div className="bg-white rounded-2xl px-5 py-3 border border-gray-200/80 shadow-sm flex items-center justify-between w-full">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold text-gray-800">Sort</span>
+                
+                <div className="relative">
+                  <select 
+                    value={sortOption}
+                    onChange={(e) => {
+                      setSortOption(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="appearance-none bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 focus:outline-none focus:border-amber-500 cursor-pointer pr-8 min-w-[160px] leading-tight"
+                  >
+                    <option value="">Select option</option>
+                    <option value="latest">Newest</option>
+                    <option value="popular">Most Popular</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                  </select>
+                  
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                  </div>
+                </div>
+
+              </div>
+              
+              {/* Teks "Total: X event" sudah dihapus dari sini */}
+            </div>
+
+            {/* 2. Kontainer Hasil Pencarian & Grid Card */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm space-y-5 w-full">
+              
+              <h2 className="text-sm font-bold text-gray-800">
+                {searchQuery || selectedCategory || selectedLocation ? (
+                  <>Berikut Hasil Pencarian <span className="font-extrabold text-amber-600">"{searchQuery || selectedCategory || selectedLocation}"</span></>
+                ) : (
+                  'Semua Event'
+                )}
+              </h2>
+
+              {currentEvents.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full">
+                  {currentEvents.map((event) => (
+                    <EventCard 
+                      key={event.id}
+                      variant="standard" 
+                      event={event} 
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="py-16 text-center text-gray-400 text-sm">
+                  Tidak ada event yang ditemukan sesuai filter yang dipilih.
+                </div>
+              )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-3 pt-6 border-t border-gray-50">
+                  <button 
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 transition ${
+                      currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+                    }`}
+                  >
+                    <ChevronLeft size={14} /> Previous
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`w-7 h-7 flex items-center justify-center rounded text-xs font-semibold transition cursor-pointer ${
+                        currentPage === page 
+                          ? 'border border-amber-500 text-amber-600 bg-amber-50/50' 
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+
+                  <button 
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900 transition ${
+                      currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+                    }`}
+                  >
+                    Next <ChevronRight size={14} />
+                  </button>
+                </div>
+              )}
+
+            </div>
 
           </div>
 
         </div>
       </main>
 
-      {/* Footer Placeholder Slot */}
-      <footer className="w-full py-4 px-6 bg-[#FFFBF0] border-t border-gray-100 text-xs text-gray-400 text-center">
-        {/* [Footer Component Slot] */}
-      </footer>
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
