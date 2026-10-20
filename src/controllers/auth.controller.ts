@@ -2,20 +2,56 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";
 import { sendVerificationEmailLink } from "./email.controller";
-
+import { sendResetPasswordEmail } from "./forgetPass.controller";
 const prisma = new PrismaClient();
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        required: false,
+        defaultValue: "customer"
+      },
+      points: {
+        type: "number",
+        required: false,
+        defaultValue: 1
+      }
+    },
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    async sendVerificationEmail({ user, url }: { user: { email: string, name: string }, url: string}) {
-      await sendVerificationEmailLink(user.email, user.name, url);
+    sendPasswordResetEmail: async ({
+      user,
+      url,
+    }: {
+      user: { email: string; name?: string | null };
+      url: string;
+    }) => {
+      await sendResetPasswordEmail({ user, url });
     },
   },
+
+  emailVerification: {
+    requireEmailVerification: true,
+    sendOnSignUp: true,
+    async sendVerificationEmail({ user, url }) {
+
+      try {
+        await sendVerificationEmailLink(user.email, user.name || "User", url);
+      } catch (error) {
+        console.error("--> [BETTER-AUTH] ERROR SAAT MENGIRIM EMAIL:", error);
+      }
+    },
+    
+  },
+
+
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
@@ -23,3 +59,35 @@ export const auth = betterAuth({
     },
   },
 });
+
+// export const auth = betterAuth({
+//   database: prismaAdapter(prisma, {
+//     provider: "postgresql",
+//   }),
+//   emailAndPassword: {
+//     enabled: true,
+//     requireEmailVerification: true,
+
+//     async sendVerificationEmail({ user, url }: { user: { email: string, name: string }, url: string}) {
+//       // 1. CCTV Pertama: Apakah Better-Auth menyadari ada pendaftaran baru?
+//       console.log("==========================================");
+//       console.log("--> [BETTER-AUTH] Trigger registrasi ditangkap!");
+//       console.log("--> [BETTER-AUTH] Target Email:", user.email);
+//       console.log("--> [BETTER-AUTH] URL Verifikasi:", url);
+//       try {
+//         // 2. Memanggil fungsi pengiriman email
+//         await sendVerificationEmailLink(user.email, user.name || "User", url);
+//         console.log("--> [BETTER-AUTH] Eksekusi email selesai dijalankan.");
+//         console.log("==========================================");
+//       } catch (error) {
+//         console.error("--> [BETTER-AUTH] ERROR SAAT MENGIRIM EMAIL:", error);
+//       }
+//     },
+//   },
+// socialProviders: {
+//   google: {
+//     clientId: process.env.GOOGLE_CLIENT_ID as string,
+//     clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+//   },
+// },
+// });

@@ -1,23 +1,23 @@
 import Link from "next/link";
 import Image from "next/image";
 
- const services = [
+const services = [
   { label: "Events", href: "/events" },
   { label: "Blog", href: "/blog" },
   { label: "Business Partner", href: "#" },
   { label: "Advertisement", href: "#" },
 ];
- 
+
 const supports = [
   { label: "Chistix Help Center", href: "#" },
   { label: "Privacy Policy", href: "#" },
   { label: "Terms & Conditions", href: "#" },
   { label: "About Chistix", href: "#" },
 ];
- 
+
 const payments = [
   { name: "DANA", src: "/finlogo/dana.svg", width: 80, height: 24 },
-  { name: "QRIS", src: "/finlogo/qris.svg", width: 64, height: 24 }
+  { name: "QRIS", src: "/finlogo/qris.svg", width: 64, height: 24 },
 ];
 
 const socials = [
@@ -88,83 +88,100 @@ export default function Footer() {
         <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
           <div className="col-span-2 flex flex-col items-start gap-4 lg:col-span-1">
             <Link href="/">
-              <Image src="/chistix-logo.png" alt="chistix" width={200} height={80} className="h-12 w-auto" />
+              <Image
+                src="/chistix-logo.png"
+                alt="chistix"
+                width={200}
+                height={80}
+                className="h-12 w-auto"
+              />
             </Link>
             <div className="flex flex-col gap-1 mt-5 ml-2">
               <span className="text-xs text-gray-600">Powered by</span>
               <Link href="#" target="_blank" rel="noopener noreferrer">
-              <Image src="/logopwdk-text.png" alt="purwadhika" width={100} height={40}  className="h-5 w-auto" />
+                <Image
+                  src="/logopwdk-text.png"
+                  alt="purwadhika"
+                  width={100}
+                  height={40}
+                  className="h-5 w-auto"
+                />
               </Link>
             </div>
           </div>
 
-      <div>
-        <h2 className="mb-3 text-sm font-bold text-gray-900">Services</h2>
-        <ul className="flex flex-col gap-2">
-          {services.map((link) => (
-            <li key={link.label}>
-              <Link href={link.href} className="text-sm text-gray-700">
-              {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
+          <div>
+            <h2 className="mb-3 text-sm font-bold text-gray-900">Services</h2>
+            <ul className="flex flex-col gap-2">
+              {services.map((link) => (
+                <li key={link.label}>
+                  <Link href={link.href} className="text-sm text-gray-700">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-    <div>
-        <h2 className="mb-3 text-sm font-bold text-gray-900">Supports</h2>
-        <ul className="flex flex-col gap-2">
-          {supports.map((link) => (
-            <li key={link.label}>
-              <Link href={link.href} className="text-sm text-gray-700">
-              {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
+          <div>
+            <h2 className="mb-3 text-sm font-bold text-gray-900">Supports</h2>
+            <ul className="flex flex-col gap-2">
+              {supports.map((link) => (
+                <li key={link.label}>
+                  <Link href={link.href} className="text-sm text-gray-700">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-      <div className="col-span-2 lg:col-span-1">
-        <h2 className="mb-3 text-sm font-bold text-gray-900">Payments</h2>
-        <ul className="flex flex-wrap items-center gap-x-4 gap-y-3">
-          {payments.map((plogo) => (
-            <li key={plogo.name}>
-              <Image src={plogo.src} alt={plogo.name} width={plogo.width} height={plogo.height} className="h-5 w-auto" />
-            </li>
-          ))}
-        </ul>
-      </div>
+          <div className="col-span-2 lg:col-span-1">
+            <h2 className="mb-3 text-sm font-bold text-gray-900">Payments</h2>
+            <ul className="flex flex-wrap items-center gap-x-4 gap-y-3">
+              {payments.map((plogo) => (
+                <li key={plogo.name}>
+                  <Image
+                    src={plogo.src}
+                    alt={plogo.name}
+                    width={plogo.width}
+                    height={plogo.height}
+                    className="h-5 w-auto"
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        <ul className="mt-10 col-span-full flex flex-wrap items-center justify-center gap-3 md:gap-6">
-          {socials.map((sosmed) => (
-            <li key={sosmed.label}>
-               <a
-                href={sosmed.href}
-                aria-label={sosmed.label}
-                className="inline-flex text-amber-500 transition-colors hover:text-amber-700"
-              >
-                <svg
-                  className="size-6"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
+          <ul className="mt-10 col-span-full flex flex-wrap items-center justify-center gap-3 md:gap-6">
+            {socials.map((sosmed) => (
+              <li key={sosmed.label}>
+                <a
+                  href={sosmed.href}
+                  aria-label={sosmed.label}
+                  className="inline-flex text-amber-500 transition-colors hover:text-amber-700"
                 >
-                  {sosmed.icon}
-                </svg>
-              </a>
-            </li>
-          ))}
-        </ul>
-
-</div>
-      <p className="mt-6 border-t border-amber-200 py-4 text-center text-sm text-gray-700">
+                  <svg
+                    className="size-6"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    {sosmed.icon}
+                  </svg>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="mt-6 border-t border-amber-200 py-4 text-center text-sm text-gray-700">
           © {new Date().getFullYear()} Chistix Team. All Rights Reserved.
         </p>
       </div>
-      </footer>
-  )
+    </footer>
+  );
 }
