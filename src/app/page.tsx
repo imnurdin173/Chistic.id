@@ -26,12 +26,6 @@ export default function Home() {
         <Navbar />
       <main className={styles.main}>
         <HomePageContent />
-<!--         <div>
-          <h1 className="text-xl font-bold underline text-blue-600">Hello Imam, Kiel, Muti</h1>
-        </div>
-        <p className="text-3xl">
-          Lorem ipsum dolor sit, amet consectetur adipisicing elit. Deserunt accusantium quisquam aliquid enim quae eum voluptatum maiores tenetur commodi corporis, dignissimos odit, hic fuga numquam totam sit placeat error ipsum!
-        </p> -->
       </main>
       <Footer />
     </div>

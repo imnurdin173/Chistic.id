@@ -4,13 +4,13 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Squares2X2Icon,    // Untuk Overview
-  CalendarIcon,      // Untuk Events
-  ReceiptPercentIcon,// Untuk Transactions
-  UserGroupIcon,     // Untuk Attendee list
-  TicketIcon,        // Untuk Voucher
-  StarIcon,
-  QrCodeIcon,          // Untuk Reviews
+  Squares2X2Icon,    // Overview
+  CalendarIcon,      // Events
+  ReceiptPercentIcon,// Transactions
+  UserGroupIcon,     // Attendee list
+  TicketIcon,        // Voucher
+  StarIcon,          // Reviews
+  QrCodeIcon,        // Scan QR
 } from "@heroicons/react/24/outline";
 
 export default function Sidebar() {
@@ -23,7 +23,7 @@ export default function Sidebar() {
     { name: "Attendee list", href: "/organizer/dashboard/attendees", icon: UserGroupIcon },
     { name: "Voucher", href: "/organizer/dashboard/vouchers", icon: TicketIcon },
     { name: "Reviews", href: "/organizer/dashboard/reviews", icon: StarIcon },
-    { name: "QR Scan", href: "/organizer/dashboard/qr", icon: QrCodeIcon },
+    { name: "QR Scan", href: "/organizer/dashboard/scanner", icon: QrCodeIcon },
     
   ];
 

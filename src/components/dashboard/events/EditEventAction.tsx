@@ -41,7 +41,9 @@ export default function EditEventAction({
 
   if (!isOpen || !event) return null;
 
-  const isUpcoming = event.status === "UPCOMMING";
+  const isUpcoming = event.status === "UPCOMING";
+
+  const isOnStage = event.status === "ON STAGE"
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,9 +113,9 @@ export default function EditEventAction({
                 <h2 className="font-bold text-neutral-900 text-base">Edit Event</h2>
 
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  isUpcoming ? "bg-emerald-100 text-emerald-700" : "bg-neutral-100 text-neutral-600"
+                  isUpcoming || isOnStage ? "bg-emerald-100 text-emerald-700" : "bg-neutral-100 text-neutral-600"
                 }`}>
-                  {isUpcoming ? "Live / Upcoming" : "Draft"}
+                  {isUpcoming || isOnStage ? "Live / Upcoming" : "Draft"}
                 </span>
               </div>
               <p className="text-xs text-neutral-400">ID: #{event.id}</p>
@@ -130,7 +132,7 @@ export default function EditEventAction({
         <form onSubmit={handleSubmit}>
           <div className="p-6 space-y-4 text-xs md:text-sm max-h-[65vh] overflow-y-auto">
             
-            {isUpcoming && (
+            {isUpcoming || isOnStage && (
               <div className="p-3 bg-amber-50/70 border border-amber-200/60 rounded-xl text-xs text-amber-800">
                 💡 <strong>Catatan Organizer:</strong> Event ini sedang aktif tayang. Jika acara telah selesai dilaksanakan, klik tombol <strong>&quot;End This Event&quot;</strong> di bawah.
               </div>
@@ -214,7 +216,7 @@ export default function EditEventAction({
           <div className="flex items-center justify-between px-6 py-4 bg-neutral-50 border-t border-neutral-100">
             
             <div>
-              {isUpcoming && (
+              {isUpcoming || isOnStage && (
                 <button
                   type="button"
                   onClick={() => setShowEndConfirm(true)}
