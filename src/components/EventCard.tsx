@@ -8,6 +8,7 @@ import { EventItem } from '@/data/events';
 interface EventCardProps {
   variant?: 'presale' | 'standard';
   event: EventItem;
+  isPresaleSection?: boolean;
 }
 
 const formatRupiah = (val?: number) => {
