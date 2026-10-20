@@ -173,7 +173,7 @@ export default function CartSuccessPage() {
           </div>
         </div>
 
-        {/* TOMBOL AKSI */}
+        {/* tombol aksi */}
         <div className="space-y-2 pt-1">
           <button
             type="button"
