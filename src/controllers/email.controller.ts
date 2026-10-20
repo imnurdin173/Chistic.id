@@ -2,11 +2,16 @@ import nodemailer from "nodemailer";
 import handlebars from "handlebars";
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,         
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_APP_PASSWORD,
   },
+  tls: {
+    rejectUnauthorized: false, // <-- Tambahkan ini untuk mencegah blokir sertifikat lokal
+  }
 });
 
 const otpEmailTemplate = `<div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
@@ -27,13 +32,23 @@ export const sendVerificationEmailLink = async (
   try {
     const template = handlebars.compile(otpEmailTemplate);
     const htmlContent = template({ name, url });
-    return await transporter.sendMail({
-      from: '"Chistix-verifteam" <noreply@chistix.id',
+    const info = await transporter.sendMail({
+      from: `"Chistix Team" <no-reply>@chistix.id`,
       to: email,
       subject: "Aktivasi Akun Chistix",
       html: htmlContent,
     });
+    // Cetak bukti fisik bahwa Gmail sudah menerbitkan Message ID
+    console.log("==========================================");
+    console.log("STATUS SMTP: Terkirim ke Gmail Server!");
+    console.log("Message ID:", info.messageId);
+    console.log("==========================================");
+
+    return info;
   } catch (error) {
-    throw (new Error("gagal mengirim email OTP"), error);
+console.error("==========================================");
+    console.error("STATUS SMTP email.controller: GAGAL DENGAN ERROR:", error);
+    console.error("==========================================");
+    throw error;
   }
 };

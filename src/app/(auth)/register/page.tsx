@@ -17,7 +17,7 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleRegister = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMessage("");
@@ -38,6 +38,10 @@ export default function RegisterPage() {
       password,
       name,
       role,
+      callbackURL: "/login",
+      fetchOptions: {
+        onSuccess: () => router.push(`/verify-registration?email=${encodeURIComponent(email)}`),
+      },
     } as any);
 
     if (error) {
@@ -211,7 +215,10 @@ export default function RegisterPage() {
           </div>
         )}
 
-        <button onClick={handleGoogleLogin} className="flex items-center justify-center w-full bg-white border border-gray-300 rounded-full py-2 hover:bg-gray-50 transition-colors">
+        <button
+          onClick={handleGoogleLogin}
+          className="flex items-center justify-center w-full bg-white border border-gray-300 rounded-full py-2 hover:bg-gray-50 transition-colors"
+        >
           <img
             src="https://www.svgrepo.com/show/475656/google-color.svg"
             alt="Google"
