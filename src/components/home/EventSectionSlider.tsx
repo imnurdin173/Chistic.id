@@ -9,6 +9,7 @@ interface EventSectionSliderProps {
   title: string;
   events: EventItem[];
   isPresale?: boolean;
+  isPresaleSection?: boolean;
 }
 
 export default function EventSectionSlider({
