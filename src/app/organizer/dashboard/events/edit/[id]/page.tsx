@@ -7,7 +7,7 @@ import SidebarDashboard from "@/components/sidebar/SidebarDashboard";
 import NavbarNotLoggedIn from "@/components/menubar/navbar";
 import Footer from "@/components/menubar/footer";
 import { ChevronRightIcon, HomeIcon } from "@heroicons/react/24/outline";
-import { EventFormData, EventStatus } from "@/types/event";
+import { EventFormData } from "@/types/event";
 
 const PROVINCES = [
   "DKI Jakarta",
@@ -36,90 +36,196 @@ export default function EditEventPage({
   const resolvedParams = use(params);
   const eventId = resolvedParams.id;
 
-  // State Form Lengkap Sama Persis Seperti Create Event
-  const [form, setForm] = useState<Partial<EventFormData & { status: EventStatus }>>({
+  const [isLoading, setIsLoading] = useState(true);
+
+  // State Form Utama
+  const [form, setForm] = useState<Partial<EventFormData>>({
     title: "",
-    category: "",
-    date: "",
+    category: "Music",
     description: "",
     province: "",
     city: "",
     venueMaps: "",
     venueDetail: "",
-    totalTicket: 0,
-    ticketTiers: [
-      { id: "vip", name: "VIP", price: 0, finalPrice: 0, quota: 0, sold: 0 },
-      { id: "reguler", name: "Regular", price: 0, finalPrice: 0, quota: 0, sold: 0 },
-    ],
     presale: { enabled: false, amount: 0, startDate: "", endDate: "" },
     thumbnailImage: "",
     coverImages: [],
     videoUrl: "",
     scheduledPublishStart: "",
     scheduledPublishEnd: "",
-    status: "UPCOMING",
   });
+
+  // State Tanggal & Jam
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  // State Kuota & Harga Tier Tiket
+  const [totalTicket, setTotalTicket] = useState<number>(0);
+  const [vipQuota, setVipQuota] = useState<number>(0);
+  const [vipPrice, setVipPrice] = useState<number>(0);
+  const [vipFinalPrice, setVipFinalPrice] = useState<number>(0);
+
+  const [regularQuota, setRegularQuota] = useState<number>(0);
+  const [regularPrice, setRegularPrice] = useState<number>(0);
+  const [regularFinalPrice, setRegularFinalPrice] = useState<number>(0);
+
+  const [presaleQuota, setPresaleQuota] = useState<number>(0);
 
   const [agreedToTerms, setAgreedToTerms] = useState(true);
 
-  // Helper ganti data form
-  const handleChange = (field: string, value: unknown) => {
+  // Kalkulasi Kuota Otomatis
+  const allocatedQuota = vipQuota + regularQuota + (form.presale?.enabled ? presaleQuota : 0);
+  const remainingQuota = totalTicket - allocatedQuota;
+
+  const handleChange = (field: keyof EventFormData, value: unknown) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Helper ubah tier tiket VIP / Regular
-  const handleTierChange = (index: number, field: "quota" | "price" | "finalPrice", value: number) => {
-    setForm((prev) => {
-      const updatedTiers = [...(prev.ticketTiers || [])];
-      if (updatedTiers[index]) {
-        updatedTiers[index] = { ...updatedTiers[index], [field]: value };
-      }
-      return { ...prev, ticketTiers: updatedTiers };
-    });
-  };
-
-  // Pre-fill data event saat halaman dimuat (Nanti: fetch GET /api/events/:id)
+  // 1. TARIK DATA DARI DATABASE NEON SAAT HALAMAN DIBUKA (PRE-FILL FORM)
   useEffect(() => {
-    setForm({
-      title: "Resonance Soundfest 2026: Intimate Live Performance",
-      category: "Music",
-      date: "2026-11-15",
-      description: "Nikmati pengalaman musik akustik dan indie pop paling spektakuler tahun ini!",
-      province: "DKI Jakarta",
-      city: "Jakarta Pusat",
-      venueMaps: "https://maps.google.com/?q=Istora+Senayan",
-      venueDetail: "Istora Senayan, Jakarta",
-      totalTicket: 500,
-      ticketTiers: [
-        { id: "vip", name: "VIP", price: 650000, finalPrice: 650000, quota: 100, sold: 80 },
-        { id: "reguler", name: "Regular", price: 400000, finalPrice: 400000, quota: 400, sold: 232 },
-      ],
-      presale: {
-        enabled: true,
-        amount: 100,
-        startDate: "2026-10-01",
-        endDate: "2026-10-31",
-      },
-      thumbnailImage: "",
-      coverImages: [],
-      videoUrl: "",
-      status: "UPCOMING",
-    });
-  }, [eventId]);
+    const fetchEventDetail = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch(`/api/organizer/events/${eventId}`);
+        const json = await res.json();
 
-  const handleSaveUpdate = (newStatus?: EventStatus) => {
-    const finalData = {
-      id: eventId,
-      ...form,
-      status: newStatus || form.status,
+        if (json.success && json.data) {
+          const evt = json.data;
+
+          // Helper format ISO Date ke YYYY-MM-DDTHH:mm untuk input datetime-local
+          const formatToDatetimeLocal = (dateString?: string) => {
+            if (!dateString) return "";
+            const d = new Date(dateString);
+            if (isNaN(d.getTime())) return "";
+            return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+              .toISOString()
+              .slice(0, 16);
+          };
+
+          setForm({
+            title: evt.title || "",
+            category: evt.category || "Music",
+            description: evt.description || "",
+            province: evt.province || "",
+            city: evt.city || "",
+            venueMaps: evt.venueMaps || "",
+            venueDetail: evt.venueDetail || "",
+            presale: { enabled: false, amount: 0, startDate: "", endDate: "" },
+          });
+
+          setStartDate(formatToDatetimeLocal(evt.startDate));
+          setEndDate(formatToDatetimeLocal(evt.endDate));
+          setTotalTicket(Number(evt.totalTicket || 0));
+
+          // Pre-fill tier tiket VIP & Regular
+          if (Array.isArray(evt.ticketTiers)) {
+            const vip = evt.ticketTiers.find((t: any) => t.name.toUpperCase().includes("VIP"));
+            const reg = evt.ticketTiers.find((t: any) => t.name.toUpperCase().includes("REGULAR") || t.name.toUpperCase().includes("REGULER"));
+
+            if (vip) {
+              setVipQuota(Number(vip.quota || 0));
+              setVipPrice(Number(vip.price || 0));
+              setVipFinalPrice(Number(vip.finalPrice || vip.price || 0));
+            }
+            if (reg) {
+              setRegularQuota(Number(reg.quota || 0));
+              setRegularPrice(Number(reg.price || 0));
+              setRegularFinalPrice(Number(reg.finalPrice || reg.price || 0));
+            }
+          }
+        } else {
+          alert("Event tidak ditemukan dalam database!");
+          router.push("/organizer/dashboard/events");
+        }
+      } catch (err) {
+        console.error("Gagal load detail event:", err);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    console.log("UPDATE EVENT PAYLOAD:", finalData);
-    // Nanti saat integrasi backend Neon/Prisma:
-    // await fetch(`/api/events/${eventId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(finalData) })
+    if (eventId) {
+      fetchEventDetail();
+    }
+  }, [eventId, router]);
 
-    alert(`Perubahan event "${form.title}" berhasil disimpan!`);
-    router.push("/organizer/dashboard/events");
+  // 2. KIRIM UPDATE KE DATABASE VIA HTTP PUT
+  const handleSaveUpdate = async () => {
+    if (!agreedToTerms) {
+      alert("Harap setujui Terms & Conditions terlebih dahulu!");
+      return;
+    }
+
+    if (!form.title || !startDate || !endDate || !form.description || !form.province || !form.city || !form.venueDetail) {
+      alert("Harap lengkapi semua field yang wajib diisi!");
+      return;
+    }
+
+    if (totalTicket <= 0) {
+      alert("Total Ticket Amount harus lebih besar dari 0!");
+      return;
+    }
+
+    if (remainingQuota !== 0) {
+      alert(`Alokasi kuota tiket belum pas! Sisa kuota: ${remainingQuota} tiket. Total alokasi tiket VIP + Regular harus tepat sama dengan ${totalTicket}!`);
+      return;
+    }
+
+    try {
+      const payload = {
+        title: form.title,
+        category: (form.category || "MUSIC").toUpperCase(),
+        startDate: new Date(startDate).toISOString(),
+        endDate: new Date(endDate).toISOString(),
+        description: form.description,
+        province: form.province,
+        city: form.city,
+        venueDetail: form.venueDetail,
+        venueMaps: form.venueMaps || "",
+        totalTicket: Number(totalTicket),
+        ticketTiers: [
+          {
+            name: "VIP",
+            price: Number(vipPrice),
+            finalPrice: Number(vipFinalPrice || vipPrice),
+            quota: Number(vipQuota),
+          },
+          {
+            name: "Regular",
+            price: Number(regularPrice),
+            finalPrice: Number(regularFinalPrice || regularPrice),
+            quota: Number(regularQuota),
+          },
+        ],
+        presale: form.presale?.enabled
+          ? {
+              enabled: true,
+              amount: Number(presaleQuota),
+              startDate: form.presale.startDate,
+              endDate: form.presale.endDate,
+            }
+          : { enabled: false },
+      };
+
+      // Tembak Endpoint PUT
+      const res = await fetch(`/api/organizer/events/${eventId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.message || "Gagal memperbarui event");
+      }
+
+      alert("🎉 Sukses! Perubahan event berhasil diperbarui di database Neon!");
+      router.push("/organizer/dashboard/events");
+    } catch (err: any) {
+      console.error(err);
+      alert("Terjadi kesalahan: " + err.message);
+    }
   };
 
   return (
@@ -156,383 +262,314 @@ export default function EditEventPage({
               <span className="text-neutral-900 font-semibold">Edit Event</span>
             </nav>
 
-            {/* Card Form Lengkap */}
+            {/* Card Form Edit */}
             <div className="bg-white rounded-2xl border border-neutral-100 shadow-xs overflow-hidden">
-              <div className="p-6 md:p-8 space-y-5">
-                
-                {/* Header Edit + Status Badge */}
-                <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
-                  <div>
-                    <h1 className="text-xl font-bold text-neutral-900">Edit Event</h1>
-                    <p className="text-xs text-neutral-400 mt-0.5">Perbarui rincian dan pengaturan tiket event</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-neutral-400 font-mono">ID: #{eventId}</span>
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                      form.status === "ON STAGE" 
-                        ? "bg-rose-100 text-rose-700 border border-rose-300"
-                        : "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                    }`}>
-                      {form.status}
-                    </span>
-                  </div>
+              
+              {isLoading ? (
+                <div className="p-16 text-center text-neutral-400 text-sm">
+                  Memuat data event dari database Neon...
                 </div>
-
-                {/* Event Title */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
-                  <label className="text-sm font-medium text-neutral-700 pt-2.5">Event Title</label>
-                  <input
-                    type="text"
-                    value={form.title}
-                    onChange={(e) => handleChange("title", e.target.value)}
-                    className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50"
-                  />
-                </div>
-
-                {/* Event Category */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
-                  <label className="text-sm font-medium text-neutral-700 pt-2.5">Event Category</label>
-                  <select
-                    value={form.category}
-                    onChange={(e) => handleChange("category", e.target.value)}
-                    className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50 cursor-pointer"
-                  >
-                    <option value="Music">Music</option>
-                    <option value="Art">Art</option>
-                    <option value="Sports">Sports</option>
-                    <option value="Technology">Technology</option>
-                    <option value="Business">Business</option>
-                  </select>
-                </div>
-
-                {/* Event Date */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
-                  <label className="text-sm font-medium text-neutral-700 pt-2.5">Event Date</label>
-                  <input
-                    type="date"
-                    value={form.date}
-                    onChange={(e) => handleChange("date", e.target.value)}
-                    className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50"
-                  />
-                </div>
-
-                {/* Event Description */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
-                  <label className="text-sm font-medium text-neutral-700 pt-2.5">Event Description</label>
-                  <textarea
-                    rows={4}
-                    value={form.description}
-                    onChange={(e) => handleChange("description", e.target.value)}
-                    className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50 resize-none"
-                  />
-                </div>
-
-                {/* Province */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
-                  <label className="text-sm font-medium text-neutral-700 pt-2.5">Location Province</label>
-                  <select
-                    value={form.province}
-                    onChange={(e) => {
-                      handleChange("province", e.target.value);
-                      handleChange("city", "");
-                    }}
-                    className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50 cursor-pointer"
-                  >
-                    <option value="">Select Province</option>
-                    {PROVINCES.map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* City */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
-                  <label className="text-sm font-medium text-neutral-700 pt-2.5">Location City</label>
-                  <select
-                    value={form.city}
-                    onChange={(e) => handleChange("city", e.target.value)}
-                    disabled={!form.province}
-                    className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50 disabled:opacity-50 cursor-pointer"
-                  >
-                    <option value="">Select City</option>
-                    {(CITIES[form.province ?? ""] ?? []).map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Venue Maps URL */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
-                  <label className="text-sm font-medium text-neutral-700 pt-2.5">Venue Location Maps</label>
-                  <input
-                    type="url"
-                    placeholder="https://maps.google.com/..."
-                    value={form.venueMaps}
-                    onChange={(e) => handleChange("venueMaps", e.target.value)}
-                    className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50"
-                  />
-                </div>
-
-                {/* Venue Detail */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
-                  <label className="text-sm font-medium text-neutral-700 pt-2.5">Venue Location Detail</label>
-                  <input
-                    type="text"
-                    value={form.venueDetail}
-                    onChange={(e) => handleChange("venueDetail", e.target.value)}
-                    className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50"
-                  />
-                </div>
-
-                {/* Total Ticket */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                  <label className="text-sm font-medium text-neutral-700">Total Ticket Amount</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={form.totalTicket}
-                    onChange={(e) => handleChange("totalTicket", Number(e.target.value))}
-                    className="w-28 border border-neutral-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50"
-                  />
-                </div>
-
-                <div className="border-t border-neutral-100 pt-2" />
-
-                {/* VIP Tier */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                  <label className="text-sm font-medium text-neutral-700 pl-2">VIP Tier</label>
-                  <div className="sm:col-span-2 flex flex-wrap gap-2.5 items-center text-xs text-neutral-500">
-                    <input
-                      type="number"
-                      placeholder="Quota"
-                      value={form.ticketTiers?.[0]?.quota || 0}
-                      onChange={(e) => handleTierChange(0, "quota", Number(e.target.value))}
-                      className="w-20 border border-neutral-200 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50"
-                    />
-                    <span>Price Normal</span>
-                    <input
-                      type="number"
-                      placeholder="Normal"
-                      value={form.ticketTiers?.[0]?.price || 0}
-                      onChange={(e) => handleTierChange(0, "price", Number(e.target.value))}
-                      className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50"
-                    />
-                    <span>Final Price</span>
-                    <input
-                      type="number"
-                      placeholder="Final"
-                      value={form.ticketTiers?.[0]?.finalPrice || 0}
-                      onChange={(e) => handleTierChange(0, "finalPrice", Number(e.target.value))}
-                      className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50"
-                    />
-                  </div>
-                </div>
-
-                {/* Regular Tier */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                  <label className="text-sm font-medium text-neutral-700 pl-2">Regular Tier</label>
-                  <div className="sm:col-span-2 flex flex-wrap gap-2.5 items-center text-xs text-neutral-500">
-                    <input
-                      type="number"
-                      placeholder="Quota"
-                      value={form.ticketTiers?.[1]?.quota || 0}
-                      onChange={(e) => handleTierChange(1, "quota", Number(e.target.value))}
-                      className="w-20 border border-neutral-200 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50"
-                    />
-                    <span>Price Normal</span>
-                    <input
-                      type="number"
-                      placeholder="Normal"
-                      value={form.ticketTiers?.[1]?.price || 0}
-                      onChange={(e) => handleTierChange(1, "price", Number(e.target.value))}
-                      className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50"
-                    />
-                    <span>Final Price</span>
-                    <input
-                      type="number"
-                      placeholder="Final"
-                      value={form.ticketTiers?.[1]?.finalPrice || 0}
-                      onChange={(e) => handleTierChange(1, "finalPrice", Number(e.target.value))}
-                      className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50"
-                    />
-                  </div>
-                </div>
-
-                {/* Presale Toggle */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                  <label className="text-sm font-medium text-neutral-700 pl-2">Presale Ticket</label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleChange("presale", {
-                          ...form.presale,
-                          enabled: !form.presale?.enabled,
-                        })
-                      }
-                      className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${
-                        form.presale?.enabled ? "bg-[#EA580C]" : "bg-neutral-200"
-                      }`}
-                    >
-                      <span
-                        className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-xs transition-all ${
-                          form.presale?.enabled ? "left-4.5" : "left-0.5"
-                        }`}
-                      />
-                    </button>
-                    <span className="text-xs text-neutral-500 font-medium">
-                      {form.presale?.enabled ? "Aktif" : "Tidak Aktif"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Presale Detail Form */}
-                {form.presale?.enabled && (
-                  <div className="ml-2 sm:ml-4 space-y-4 p-4 bg-orange-50/40 border border-orange-200 rounded-xl">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-                      <label className="text-xs font-semibold text-neutral-700">Presale Quota</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={form.presale?.amount || 0}
-                        onChange={(e) =>
-                          handleChange("presale", {
-                            ...form.presale,
-                            amount: Number(e.target.value),
-                          })
-                        }
-                        className="w-28 border border-neutral-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-white"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-                      <label className="text-xs font-semibold text-neutral-700">Presale Period</label>
-                      <div className="sm:col-span-2 flex items-center gap-2 text-xs text-neutral-500">
-                        <input
-                          type="date"
-                          value={form.presale?.startDate || ""}
-                          onChange={(e) =>
-                            handleChange("presale", {
-                              ...form.presale,
-                              startDate: e.target.value,
-                            })
-                          }
-                          className="border border-neutral-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:outline-none focus:border-[#BB4D00]"
-                        />
-                        <span>until</span>
-                        <input
-                          type="date"
-                          value={form.presale?.endDate || ""}
-                          onChange={(e) =>
-                            handleChange("presale", {
-                              ...form.presale,
-                              endDate: e.target.value,
-                            })
-                          }
-                          className="border border-neutral-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:outline-none focus:border-[#BB4D00]"
-                        />
+              ) : (
+                <>
+                  <div className="p-6 md:p-8 space-y-5">
+                    
+                    {/* Header Card */}
+                    <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+                      <div>
+                        <h1 className="text-xl font-bold text-neutral-900">Edit Event</h1>
+                        <p className="text-xs text-neutral-400 mt-0.5">Perbarui rincian event dan alokasi tiket Anda</p>
                       </div>
+                      <span className="text-xs font-mono text-neutral-400 bg-neutral-100 px-3 py-1 rounded-full">
+                        ID: #{eventId}
+                      </span>
                     </div>
-                  </div>
-                )}
 
-                {/* File Upload: Thumbnail (1:1) */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
-                  <label className="text-sm font-medium text-neutral-700">Thumbnail Image</label>
-                  <div className="sm:col-span-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="text-sm text-neutral-600 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border file:border-neutral-200 file:text-xs file:font-semibold file:bg-neutral-50 file:text-neutral-700 hover:file:bg-neutral-100 file:cursor-pointer cursor-pointer"
-                    />
-                    <p className="text-xs text-neutral-400 mt-1">Aspect ratio 1:1</p>
-                  </div>
-                </div>
+                    {/* Event Title */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                      <label className="text-sm font-medium text-neutral-700 pt-2.5">Event Title</label>
+                      <input
+                        type="text"
+                        placeholder="Nama event..."
+                        value={form.title}
+                        onChange={(e) => handleChange("title", e.target.value)}
+                        className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50"
+                        required
+                      />
+                    </div>
 
-                {/* File Upload: Cover (2:1) */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
-                  <label className="text-sm font-medium text-neutral-700">Cover Images</label>
-                  <div className="sm:col-span-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="text-sm text-neutral-600 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border file:border-neutral-200 file:text-xs file:font-semibold file:bg-neutral-50 file:text-neutral-700 hover:file:bg-neutral-100 file:cursor-pointer cursor-pointer"
-                    />
-                    <p className="text-xs text-neutral-400 mt-1">Aspect ratio 2:1</p>
-                  </div>
-                </div>
-
-                {/* File Upload: Video Cover */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
-                  <label className="text-sm font-medium text-neutral-700">Video Cover (Optional)</label>
-                  <div className="sm:col-span-2">
-                    <input
-                      type="file"
-                      accept="video/*"
-                      className="text-sm text-neutral-600 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border file:border-neutral-200 file:text-xs file:font-semibold file:bg-neutral-50 file:text-neutral-700 hover:file:bg-neutral-100 file:cursor-pointer cursor-pointer"
-                    />
-                    <p className="text-xs text-neutral-400 mt-1">Aspect ratio 2:1</p>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Bottom Publishing Bar */}
-              <div className="border-t border-neutral-100 bg-neutral-50/50 px-6 md:px-8 py-5">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  
-                  {/* Status Selector & T&C */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs font-semibold text-neutral-700">Update Status:</label>
+                    {/* Event Category */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                      <label className="text-sm font-medium text-neutral-700 pt-2.5">Event Category</label>
                       <select
-                        value={form.status}
-                        onChange={(e) => handleChange("status", e.target.value as EventStatus)}
-                        className="border border-neutral-200 rounded-lg px-2.5 py-1 text-xs font-bold text-neutral-800 bg-white focus:outline-none focus:border-[#BB4D00]"
+                        value={form.category}
+                        onChange={(e) => handleChange("category", e.target.value)}
+                        className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50 cursor-pointer"
                       >
-                        <option value="DRAFT">DRAFT</option>
-                        <option value="UPCOMING">UPCOMING</option>
-                        <option value="ON STAGE">ON STAGE (LIVE)</option>
-                        <option value="ENDED">ENDED</option>
+                        <option value="Music">Music</option>
+                        <option value="Seminar">Seminar</option>
+                        <option value="Talkshow">Talkshow</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Exhibition">Exhibition</option>
                       </select>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="checkbox"
-                        id="terms"
-                        checked={agreedToTerms}
-                        onChange={(e) => setAgreedToTerms(e.target.checked)}
-                        className="rounded"
-                      />
-                      <label htmlFor="terms" className="text-xs text-neutral-600">
-                        Confirm update terms & conditions
+                    {/* Jadwal Event (Start & End Date-Time) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                      <label className="text-sm font-medium text-neutral-700 pt-2.5">
+                        Event Schedule
                       </label>
+                      <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-xs text-neutral-400 block mb-1">Start Date & Time</span>
+                          <input
+                            type="datetime-local"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="w-full border border-neutral-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#BB4D00] bg-neutral-50 cursor-pointer"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <span className="text-xs text-neutral-400 block mb-1">End Date & Time</span>
+                          <input
+                            type="datetime-local"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="w-full border border-neutral-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#BB4D00] bg-neutral-50 cursor-pointer"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                      <label className="text-sm font-medium text-neutral-700 pt-2.5">Event Description</label>
+                      <textarea
+                        rows={4}
+                        placeholder="Deskripsi lengkap event..."
+                        value={form.description}
+                        onChange={(e) => handleChange("description", e.target.value)}
+                        className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50 resize-none"
+                        required
+                      />
+                    </div>
+
+                    {/* Province */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                      <label className="text-sm font-medium text-neutral-700 pt-2.5">Location Province</label>
+                      <select
+                        value={form.province}
+                        onChange={(e) => {
+                          handleChange("province", e.target.value);
+                          handleChange("city", "");
+                        }}
+                        className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50 cursor-pointer"
+                        required
+                      >
+                        <option value="">Select Province</option>
+                        {PROVINCES.map((p) => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* City */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                      <label className="text-sm font-medium text-neutral-700 pt-2.5">Location City</label>
+                      <select
+                        value={form.city}
+                        onChange={(e) => handleChange("city", e.target.value)}
+                        disabled={!form.province}
+                        className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50 disabled:opacity-50 cursor-pointer"
+                        required
+                      >
+                        <option value="">Select City</option>
+                        {(CITIES[form.province ?? ""] ?? []).map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Venue Location Maps */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                      <label className="text-sm font-medium text-neutral-700 pt-2.5">Venue Location Maps</label>
+                      <input
+                        type="url"
+                        placeholder="https://maps.google.com/..."
+                        value={form.venueMaps}
+                        onChange={(e) => handleChange("venueMaps", e.target.value)}
+                        className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50"
+                      />
+                    </div>
+
+                    {/* Venue Detail */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                      <label className="text-sm font-medium text-neutral-700 pt-2.5">Venue Location Detail</label>
+                      <input
+                        type="text"
+                        placeholder="Nama gedung, jalan, detail lokasi..."
+                        value={form.venueDetail}
+                        onChange={(e) => handleChange("venueDetail", e.target.value)}
+                        className="sm:col-span-2 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50"
+                        required
+                      />
+                    </div>
+
+                    {/* Total Ticket Amount */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                      <label className="text-sm font-medium text-neutral-700">Total Ticket Amount</label>
+                      <div className="sm:col-span-2 flex items-center gap-3">
+                        <input
+                          type="number"
+                          min={1}
+                          placeholder="Contoh: 500"
+                          value={totalTicket || ""}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setTotalTicket(val);
+                            setVipQuota(0);
+                            setRegularQuota(0);
+                            setPresaleQuota(0);
+                          }}
+                          className="w-36 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50 font-bold"
+                          required
+                        />
+                        <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
+                          totalTicket === 0
+                            ? "bg-neutral-100 text-neutral-500"
+                            : remainingQuota === 0
+                            ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                            : remainingQuota < 0
+                            ? "bg-rose-100 text-rose-700 border border-rose-200"
+                            : "bg-amber-100 text-amber-700 border border-amber-200"
+                        }`}>
+                          {totalTicket === 0
+                            ? "Isi total kuota dahulu"
+                            : remainingQuota === 0
+                            ? "✅ Kuota pas terbagi!"
+                            : remainingQuota < 0
+                            ? `⚠️ Kelebihan ${Math.abs(remainingQuota)} tiket!`
+                            : `Sisa Kuota: ${remainingQuota} tiket`}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-neutral-100 pt-2" />
+
+                    {/* VIP Tier */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                      <label className="text-sm font-medium text-neutral-700 pl-4">VIP Tier</label>
+                      <div className="sm:col-span-2 flex flex-wrap gap-2.5 items-center text-xs text-neutral-500">
+                        <input
+                          type="number"
+                          min={0}
+                          max={vipQuota + remainingQuota}
+                          disabled={totalTicket <= 0}
+                          placeholder="Quota"
+                          value={vipQuota || ""}
+                          onChange={(e) => setVipQuota(Number(e.target.value))}
+                          className="w-20 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm disabled:opacity-40 font-semibold text-neutral-900"
+                        />
+                        <span>Normal Price</span>
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder="0"
+                          value={vipPrice || ""}
+                          onChange={(e) => setVipPrice(Number(e.target.value))}
+                          className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm"
+                        />
+                        <span>Final Price</span>
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder="0"
+                          value={vipFinalPrice || ""}
+                          onChange={(e) => setVipFinalPrice(Number(e.target.value))}
+                          className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Regular Tier */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                      <label className="text-sm font-medium text-neutral-700 pl-4">Regular Tier</label>
+                      <div className="sm:col-span-2 flex flex-wrap gap-2.5 items-center text-xs text-neutral-500">
+                        <input
+                          type="number"
+                          min={0}
+                          max={regularQuota + remainingQuota}
+                          disabled={totalTicket <= 0}
+                          placeholder="Quota"
+                          value={regularQuota || ""}
+                          onChange={(e) => setRegularQuota(Number(e.target.value))}
+                          className="w-20 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm disabled:opacity-40 font-semibold text-neutral-900"
+                        />
+                        <span>Normal Price</span>
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder="0"
+                          value={regularPrice || ""}
+                          onChange={(e) => setRegularPrice(Number(e.target.value))}
+                          className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm"
+                        />
+                        <span>Final Price</span>
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder="0"
+                          value={regularFinalPrice || ""}
+                          onChange={(e) => setRegularFinalPrice(Number(e.target.value))}
+                          className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm"
+                        />
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Bottom Action Bar */}
+                  <div className="border-t border-neutral-100 bg-neutral-50/50 px-6 md:px-8 py-5">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="checkbox"
+                            id="terms"
+                            checked={agreedToTerms}
+                            onChange={(e) => setAgreedToTerms(e.target.checked)}
+                            className="rounded cursor-pointer"
+                          />
+                          <label htmlFor="terms" className="text-xs text-neutral-600 cursor-pointer">
+                            Confirm update terms & conditions
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2.5">
+                        <Link
+                          href="/organizer/dashboard/events"
+                          className="px-5 py-2.5 rounded-full text-sm font-semibold text-neutral-700 border border-neutral-200 hover:bg-neutral-100 transition-colors"
+                        >
+                          Cancel
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={handleSaveUpdate}
+                          className="px-6 py-2.5 rounded-full text-sm font-semibold text-white bg-[#EA580C] hover:bg-[#BB4D00] transition-colors cursor-pointer shadow-xs"
+                        >
+                          Save Changes
+                        </button>
+                      </div>
+
                     </div>
                   </div>
-
-                  {/* Tombol Simpan & Batal */}
-                  <div className="flex items-center gap-2.5">
-                    <Link
-                      href="/organizer/dashboard/events"
-                      className="px-5 py-2.5 rounded-full text-sm font-semibold text-neutral-700 border border-neutral-200 hover:bg-neutral-100 transition-colors"
-                    >
-                      Cancel
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => handleSaveUpdate()}
-                      className="px-6 py-2.5 rounded-full text-sm font-semibold text-white bg-[#EA580C] hover:bg-[#BB4D00] transition-colors cursor-pointer shadow-xs"
-                    >
-                      Save Changes
-                    </button>
-                  </div>
-
-                </div>
-              </div>
+                </>
+              )}
 
             </div>
-
           </div>
         </div>
       </div>

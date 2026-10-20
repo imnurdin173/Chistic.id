@@ -21,6 +21,7 @@ export interface EventItem {
     title: string
     category: string
     date: string
+    timeRange?: string
     description: string
     province: string
     city: string

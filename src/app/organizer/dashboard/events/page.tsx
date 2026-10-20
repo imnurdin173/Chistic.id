@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Sidebar from "@/components/sidebar/SidebarDashboard";
 import EventStatusBadge from "@/components/dashboard/events/EventStatusBadge";
@@ -121,7 +121,54 @@ const DUMMY_EVENTS: EventItem[] = [
 ];
 
 export default function Eventspage() {
-  const [events, setEvents] = useState<EventItem[]>(DUMMY_EVENTS);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true)
+
+  const fetchEvents = async () => {
+    try {
+      setIsLoading(true)
+      const res = await fetch("/api/organizer/events")
+      const json = await res.json()
+      if (json.success && json.data) {
+        const formatted = json.data.map((evt: any) => {
+
+          const startDateObj = evt.startDate ? new Date(evt.startDate) : (evt.date ? new Date(evt.date): null);
+          const endDateObj = evt.endDate ? new Date(evt.endDate) : null
+
+          const dateText = startDateObj && !isNaN(startDateObj.getTime())
+          ? startDateObj.toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+          })
+          : "-"
+
+          const startTimeStr = startDateObj && !isNaN(startDateObj.getTime())
+          ? startDateObj.toLocaleTimeString("id-ID", {hour: "2-digit", minute: "2-digit"}) : "";
+          const endTimeStr = endDateObj && !isNaN(endDateObj.getTime())
+          ? endDateObj?.toLocaleTimeString("id-ID", {hour: "2-digit", minute: "2-digit"}) : "";
+
+          const timeText = startTimeStr && endTimeStr ?
+          `${startTimeStr} - ${endTimeStr} WIB` : startTimeStr ? `${startTimeStr} WIB` : ""
+          
+          return {
+            ...evt,
+            date: dateText,
+            timeRange: timeText,
+          };
+        });
+        setEvents(formatted);
+      }
+    } catch (err) {
+      console.error("Gagal load events: ", err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchEvents()
+  }, [])
 
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>("All");
@@ -145,13 +192,20 @@ export default function Eventspage() {
     ENDED: 4,
   };
   const filteredEvents = events.filter((event) => {
-    const mathSearch = event.title.toLowerCase().includes(searchQuery.toLocaleLowerCase()) || event.city.toLowerCase().includes(searchQuery.toLocaleLowerCase());
-    const matchStatus = activeStatusFilter === "All" ? true : event.status.toLowerCase() === activeStatusFilter.toUpperCase();
-    return mathSearch && matchStatus;
-  });
+    const matchSearch =
+      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (event.city ? event.city.toLowerCase().includes(searchQuery.toLowerCase()) : false);
 
+    const normalizedEventStatus = (event.status || "").replace("_", " ").toLowerCase();
+    const normalizedFilter = activeStatusFilter.toLowerCase();
+    const matchStatus =
+      activeStatusFilter === "All" ? true : normalizedEventStatus === normalizedFilter;
+    return matchSearch && matchStatus;
+  });
   const sortedEvents = [...filteredEvents].sort((a, b) => {
-    return (statusPriority[a.status] || 99) - (statusPriority[b.status] || 99);
+    const priorityA = statusPriority[a.status] || statusPriority[a.status?.replace("_", " ")] || 99;
+    const priorityB = statusPriority[b.status] || statusPriority[b.status?.replace("_", " ")] || 99;
+    return priorityA - priorityB;
   });
 
   const handleConfirmPublish = () => {
@@ -228,10 +282,17 @@ export default function Eventspage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
-                  {sortedEvents.length === 0 ? (
+                  {isLoading ? (
                     <tr>
                       <td colSpan={5} className="text-center py-12 text-neutral-400 text-sm">
-                        No events found matching your search
+                        Loading data ...
+                      </td>
+                    </tr>
+                  ):
+                  sortedEvents.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-12 text-neutral-400 text-sm">
+                        No events found, Click "Create-Event" to add first event
                       </td>
                     </tr>
                   ) : (
@@ -243,7 +304,16 @@ export default function Eventspage() {
                             <p className="font-semibold text-neutral-900 leading-snug line-clamp-2 px-4">{event.title}</p>
                             <p className="text-neutral-400 text-xs mt-0.5 px-4">{event.venueDetail}</p>
                           </td>
-                          <td className="py-4 pr-4 whitespace-nowrap text-neutral-600">{event.date}</td>
+                          <td className="py-4 pr-4 whitespace-nowrap text-neutral-600">
+                            <p className="font-semibold text-neutral-800">{event.date}</p>
+                            {event.timeRange ? (
+                              <p className="text-neutral-400 text-xs mt-0.5 font-medium">{event.timeRange}</p>
+                            ): (
+                              <p className="text-neutral-400 text-xs mt-0.5">
+                                Waktu belum bisa diatur
+                              </p>
+                            )}
+                          </td>
                           <td className="py-4 pr-4 px-4 whitespace-nowrap text-neutral-600 font-medium">
                             {totalSold} / {event.totalTicket}
                           </td>
