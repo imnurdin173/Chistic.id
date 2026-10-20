@@ -115,7 +115,7 @@ export default function CartSuccessPage() {
             <div className="flex justify-between items-center">
               <span style={{ color: "#94a3b8" }}>Customer</span>
               <span className="font-bold" style={{ color: "#0f172a" }}>
-                Shalihati M. R.
+                mutiara
               </span>
             </div>
 
@@ -161,7 +161,7 @@ export default function CartSuccessPage() {
               style={{ backgroundColor: "#ffffff", borderColor: "#e2e8f0" }}
             >
               <img
-                src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Chistix-Ticket-Shalihati"
+                src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Chistix-Ticket-Mutiara"
                 alt="QR Code Ticket"
                 className="w-36 h-36 mx-auto object-contain"
                 crossOrigin="anonymous"
