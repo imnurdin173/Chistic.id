@@ -81,7 +81,7 @@ const socials = [
   },
 ];
 
-export default function footer() {
+export default function Footer() {
   return (
     <footer className="mt-auto w-full border-t bg-amber-100">
       <div className="container mx-auto max-w-8xl px-4 pt-10 sm:px-6">
