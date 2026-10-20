@@ -2,27 +2,38 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { QRCodeSVG } from "qrcode.react";
+import { DUMMY_EVENTS } from "@/data/events";
 
 function QrPaymentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Ambil parameter dari URL
+  const eventIdParam = searchParams.get("eventId");
   const amountParam = searchParams.get("amount");
   const qtyParam = searchParams.get("qty");
-  const totalAmount = amountParam ? parseInt(amountParam, 10) : 610500;
-  const ticketQty = qtyParam ? parseInt(qtyParam, 10) : 1;
+  const variantParam = searchParams.get("variant");
 
-  // Timer 10 Menit
+  const selectedEvent =
+    DUMMY_EVENTS.find((e) => e.id.toString() === eventIdParam) || DUMMY_EVENTS[0];
+
+  const totalAmount = amountParam ? parseInt(amountParam, 10) : selectedEvent.price;
+  const ticketQty = qtyParam ? parseInt(qtyParam, 10) : 1;
+  const ticketVariant = variantParam || "Presale";
+
+  const [transactionId, setTransactionId] = useState("");
   const [timeLeft, setTimeLeft] = useState(10 * 60);
 
   useEffect(() => {
+    const randomString = Math.random().toString(36).substring(2, 10).toUpperCase();
+    setTransactionId(randomString);
+
     if (timeLeft <= 0) return;
     const timer = setInterval(() => {
       setTimeLeft((prev) => prev - 1);
     }, 1000);
     return () => clearInterval(timer);
-  }, [timeLeft]);
+  }, []);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -33,9 +44,12 @@ function QrPaymentContent() {
   const formatRupiah = (num: number) => "Rp " + num.toLocaleString("id-ID");
 
   const handleAlreadyPaid = () => {
-    // Berpindah ke halaman baru E-Ticket dengan membawa data jumlah & total harga
-    router.push(`/cart/payment/success?amount=${totalAmount}&qty=${ticketQty}`);
+    router.push(
+      `/cart/payment/success?eventId=${selectedEvent.id}&amount=${totalAmount}&qty=${ticketQty}&variant=${encodeURIComponent(ticketVariant)}`
+    );
   };
+
+  const qrisPayload = `CHISTIX-PAYMENT-${transactionId}-Rp${totalAmount}`;
 
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4 flex flex-col items-center justify-center">
@@ -43,7 +57,9 @@ function QrPaymentContent() {
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <h1 className="text-xl font-bold text-slate-800">Pay with QRIS</h1>
-            <p className="text-xs text-slate-400">Transaction ID: #CHX-893201</p>
+            <p className="text-xs text-slate-400">
+              Transaction ID: <span className="font-semibold text-slate-600">{transactionId || "..."}</span>
+            </p>
           </div>
 
           <div className="bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-center">
@@ -62,16 +78,17 @@ function QrPaymentContent() {
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs font-bold text-slate-800">Resonance Soundfest 2026</div>
-            <div className="text-[11px] text-slate-400">{ticketQty}x Pre Sale VIP</div>
+            <div className="text-xs font-bold text-slate-800">{selectedEvent.title}</div>
+            <div className="text-[11px] text-slate-400">
+              {ticketQty}x {ticketVariant}
+            </div>
           </div>
         </div>
 
         <div className="text-center space-y-3 py-2">
           <div className="w-52 h-52 mx-auto bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs flex flex-col items-center justify-center">
-            <div className="w-full h-full bg-slate-100 rounded-xl flex flex-col items-center justify-center border border-dashed border-slate-300">
-              <span className="text-5xl">📱</span>
-              <span className="text-[10px] font-bold text-slate-400 mt-2">[ QRIS CHISTIX ]</span>
+            <div className="w-full h-full bg-white rounded-xl flex flex-col items-center justify-center border border-slate-100">
+              <QRCodeSVG value={qrisPayload} size={160} level="H" includeMargin={true} />
             </div>
           </div>
           <p className="text-xs font-semibold text-slate-700">Scan QR Code</p>
@@ -79,15 +96,15 @@ function QrPaymentContent() {
 
         <div className="space-y-2.5 pt-2">
           <button
-            onClick={handleAlreadyPaid} // <-- Pindah rute ke /cart/payment/success
-            className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl transition-colors shadow-xs cursor-pointer"
+            onClick={handleAlreadyPaid}
+            className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl transition cursor-pointer shadow-xs"
           >
             Saya Sudah Bayar
           </button>
 
           <button
             onClick={() => router.push("/cart")}
-            className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm rounded-xl transition-colors cursor-pointer"
+            className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm rounded-xl transition cursor-pointer"
           >
             Cancel
           </button>

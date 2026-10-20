@@ -22,7 +22,6 @@ export const CATEGORIES = [
   'Festival',
   'Workshop',
   'Standup Comedy',
-  'EDM Party',
 ];
 
 export const LOCATIONS = [
@@ -64,7 +63,7 @@ export const DUMMY_EVENTS: EventItem[] = [
     isHot: true,
     isPopular: true,
     presaleTag: 'Presale 1',
-    category: 'EDM Party',
+    category: 'Concert',
   },
   {
     id: '3',

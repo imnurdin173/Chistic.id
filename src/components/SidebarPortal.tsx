@@ -5,8 +5,8 @@ import { CATEGORIES, LOCATIONS } from '@/data/events';
 
 interface SidebarPortalProps {
   onFilterChange: (filters: {
-    category?: string;
-    location?: string;
+    category: string;
+    location: string;
     minPrice?: number;
     maxPrice?: number;
   }) => void;
@@ -18,6 +18,20 @@ export default function SidebarPortal({ onFilterChange, onReset }: SidebarPortal
   const [selectedLocation, setSelectedLocation] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+
+  // Helper function untuk memfilter HANYA angka (mencegah titik, koma, minus, dll)
+  const handlePriceChange = (value: string, setter: (val: string) => void) => {
+    // Hapus semua karakter yang bukan angka (0-9)
+    const cleanNumericValue = value.replace(/[^0-9]/g, '');
+    setter(cleanNumericValue);
+  };
+
+  // Mencegah pengetikan simbol seperti '.', ',', 'e', '-', '+' dari keyboard
+  const preventInvalidPriceInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (['.', ',', 'e', 'E', '-', '+'].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
 
   // Handler Tombol Save
   const handleSave = () => {
@@ -40,7 +54,6 @@ export default function SidebarPortal({ onFilterChange, onReset }: SidebarPortal
 
   return (
     <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm space-y-4 w-full">
-      
       {/* 1. Category */}
       <div className="space-y-1">
         <label className="block text-sm font-bold text-gray-800">
@@ -50,11 +63,11 @@ export default function SidebarPortal({ onFilterChange, onReset }: SidebarPortal
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full appearance-none bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-base font-medium text-gray-700 focus:outline-none focus:border-amber-500 cursor-pointer pr-8 leading-tight"
+            className="w-full appearance-none bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 focus:outline-none focus:border-amber-500 cursor-pointer pr-8 leading-tight"
           >
-            <option value="">Concert, Seminar, etc</option>
+            <option value="">All Categories</option>
             {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat} className="text-base py-1">
+              <option key={cat} value={cat}>
                 {cat}
               </option>
             ))}
@@ -76,11 +89,11 @@ export default function SidebarPortal({ onFilterChange, onReset }: SidebarPortal
           <select
             value={selectedLocation}
             onChange={(e) => setSelectedLocation(e.target.value)}
-            className="w-full appearance-none bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-base font-medium text-gray-400 focus:outline-none focus:border-amber-500 cursor-pointer pr-8 leading-tight"
+            className="w-full appearance-none bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 focus:outline-none focus:border-amber-500 cursor-pointer pr-8 leading-tight"
           >
-            <option value="">Province, City</option>
+            <option value="">All Locations</option>
             {LOCATIONS.map((loc) => (
-              <option key={loc} value={loc} className="text-base py-1 text-gray-700">
+              <option key={loc} value={loc}>
                 {loc}
               </option>
             ))}
@@ -93,25 +106,29 @@ export default function SidebarPortal({ onFilterChange, onReset }: SidebarPortal
         </div>
       </div>
 
-      {/* 3. Price Range */}
+      {/* 3. Price Range (Sudah Aman dari Titik / Non-Digit) */}
       <div className="space-y-1.5">
         <label className="block text-sm font-bold text-gray-800">
           Price Range
         </label>
         <div className="space-y-1.5">
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             placeholder="Minimum Price"
             value={minPrice}
-            onChange={(e) => setMinPrice(e.target.value)}
-            className="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-base font-medium placeholder-gray-400 text-gray-700 focus:outline-none focus:border-amber-500"
+            onKeyDown={preventInvalidPriceInput}
+            onChange={(e) => handlePriceChange(e.target.value, setMinPrice)}
+            className="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium placeholder-gray-400 text-gray-700 focus:outline-none focus:border-amber-500"
           />
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             placeholder="Maximum Price"
             value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
-            className="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-base font-medium placeholder-gray-400 text-gray-700 focus:outline-none focus:border-amber-500"
+            onKeyDown={preventInvalidPriceInput}
+            onChange={(e) => handlePriceChange(e.target.value, setMaxPrice)}
+            className="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium placeholder-gray-400 text-gray-700 focus:outline-none focus:border-amber-500"
           />
         </div>
       </div>
@@ -133,7 +150,6 @@ export default function SidebarPortal({ onFilterChange, onReset }: SidebarPortal
           Save
         </button>
       </div>
-
     </div>
   );
 }

@@ -1,111 +1,199 @@
 "use client";
 
-import React, { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
-function TicketSuccessContent() {
+export default function CartSuccessPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  // Ambil parameter nominal dan jumlah tiket dari URL
-  const amountParam = searchParams.get("amount");
-  const qtyParam = searchParams.get("qty");
-  
-  const totalAmount = amountParam ? parseInt(amountParam, 10) : 610500;
-  const ticketQty = qtyParam ? parseInt(qtyParam, 10) : 1;
+  const handleDownloadPDF = async () => {
+    const ticketElement = document.getElementById("e-ticket-card");
 
-  const formatRupiah = (num: number) => "Rp " + num.toLocaleString("id-ID");
+    if (!ticketElement) {
+      console.error("Elemen E-Ticket tidak ditemukan");
+      return;
+    }
 
-  const handleDownloadPDF = () => {
-    window.print();
+    try {
+      setIsDownloading(true);
+
+      // Tangkap elemen dengan menunggu gambar selesai (imageTimeout)
+      const canvas = await html2canvas(ticketElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        imageTimeout: 15000, // Menunggu gambar QR code selesai dimuat (15 detik)
+        onclone: (clonedDoc) => {
+          const allElements = clonedDoc.querySelectorAll("*");
+          allElements.forEach((el) => {
+            const htmlEl = el as HTMLElement;
+            const computedStyle = window.getComputedStyle(htmlEl);
+
+            if (computedStyle.color.includes("lab") || computedStyle.color.includes("oklch")) {
+              htmlEl.style.color = "#1e293b";
+            }
+            if (computedStyle.backgroundColor.includes("lab") || computedStyle.backgroundColor.includes("oklch")) {
+              htmlEl.style.backgroundColor = "#ffffff";
+            }
+            if (computedStyle.borderColor.includes("lab") || computedStyle.borderColor.includes("oklch")) {
+              htmlEl.style.borderColor = "#e2e8f0";
+            }
+          });
+        },
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      // Inisialisasi jsPDF ukuran A4
+      const pdf = new jsPDF("portrait", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth(); // Lebar A4 (~210mm)
+      const pageHeight = pdf.internal.pageSize.getHeight(); // Tinggi A4 (~297mm)
+
+      // Hitung ukuran proporsional tiket agar pas di tengah halaman A4
+      const imgWidth = 140; // Lebar cetak tiket dalam mm (pas di tengah A4)
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // Posisikan tiket di tengah secara horizontal (X) dan vertikal (Y)
+      const xPos = (pageWidth - imgWidth) / 2;
+      const yPos = (pageHeight - imgHeight) / 2;
+
+      pdf.addImage(imgData, "PNG", xPos, yPos > 10 ? yPos : 10, imgWidth, imgHeight);
+      pdf.save("Chistix_E-Ticket.pdf");
+    } catch (error) {
+      console.error("Gagal mengunduh PDF:", error);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 py-10 px-4 flex flex-col items-center justify-center">
-      <div className="w-full max-w-lg bg-white rounded-3xl shadow-lg border border-slate-200 overflow-hidden print:shadow-none print:border-none print:w-full">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: "#f8fafc" }}>
+      <div className="w-full max-w-md space-y-4">
         
-        {/* Banner Status Lunas */}
-        <div className="bg-emerald-600 text-white p-6 text-center space-y-1">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-full text-2xl mb-1">
-            ✅
-          </div>
-          <h2 className="text-xl font-extrabold tracking-wide uppercase">Payment Successful!</h2>
-          <p className="text-xs text-emerald-100">Booking ID: #CHX-893201-2026</p>
-        </div>
-
-        {/* Detail E-Ticket */}
-        <div className="p-6 md:p-8 space-y-6">
-          
-          {/* Judul Event */}
-          <div className="border-b border-dashed border-slate-200 pb-5 space-y-1">
-            <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-md uppercase">
-              Pre Sale VIP ({ticketQty} Ticket)
-            </span>
-            <h1 className="text-lg font-bold text-slate-800 leading-snug">
-              Resonance Soundfest 2026: Intimate Live Performance
+        {/* AREA KARTU TIKET */}
+        <div
+          id="e-ticket-card"
+          className="rounded-3xl p-6 border shadow-sm space-y-6 bg-white"
+          style={{
+            backgroundColor: "#ffffff",
+            borderColor: "#e2e8f0",
+            color: "#1e293b",
+          }}
+        >
+          {/* Status Pembayaran */}
+          <div className="text-center space-y-2">
+            <div 
+              className="w-14 h-14 rounded-full flex items-center justify-center mx-auto text-white text-2xl font-bold shadow-sm"
+              style={{ backgroundColor: "#10B981" }}
+            >
+              ✓
+            </div>
+            <h1 className="text-xl font-bold" style={{ color: "#0f172a" }}>
+              Payment Successful!
             </h1>
-            <p className="text-xs text-slate-500 font-medium">By Soundwave Entertainment</p>
-          </div>
-
-          {/* Grid Informasi Acara */}
-          <div className="grid grid-cols-2 gap-4 text-xs">
-            <div>
-              <span className="text-slate-400 block font-medium">📅 Date & Time</span>
-              <span className="font-bold text-slate-700">14 Nov 2026, 18:00 WIB</span>
-            </div>
-            <div>
-              <span className="text-slate-400 block font-medium">📍 Location & Seat</span>
-              <span className="font-bold text-slate-700">GBK Stadium, VIP Area</span>
-            </div>
-            <div>
-              <span className="text-slate-400 block font-medium">👤 Ticket Holder</span>
-              <span className="font-bold text-slate-700">Shalihati M. R.</span>
-            </div>
-            <div>
-              <span className="text-slate-400 block font-medium">💳 Total Amount</span>
-              <span className="font-bold text-emerald-600">{formatRupiah(totalAmount)}</span>
-            </div>
-          </div>
-
-          {/* QR Code Check-in */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center space-y-2">
-            <div className="w-36 h-36 mx-auto bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-center">
-              <div className="w-full h-full bg-slate-900 rounded-lg flex items-center justify-center text-white text-[10px] font-mono">
-                [ QR CHECK-IN ]
-              </div>
-            </div>
-            <p className="text-[11px] font-semibold text-slate-600">
-              Tunjukkan QR Code ini di pintu masuk acara
+            <p className="text-xs" style={{ color: "#94a3b8" }}>
+              Valid ticket. Guest may enter.
             </p>
           </div>
 
-          {/* Tombol Aksi */}
-          <div className="space-y-2.5 pt-2 print:hidden">
-            <button
-              onClick={handleDownloadPDF}
-              className="w-full py-3 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-sm rounded-xl transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>📥</span> Download E-Ticket (PDF)
-            </button>
+          {/* Rincian Transaksi */}
+          <div 
+            className="space-y-3 text-xs pt-4" 
+            style={{ borderTop: "1px solid #f1f5f9" }}
+          >
+            <div className="flex justify-between items-center">
+              <span style={{ color: "#94a3b8" }}>Events</span>
+              <span className="font-bold text-right" style={{ color: "#0f172a" }}>
+                Indie Music Summit & Showcase
+              </span>
+            </div>
 
-            <button
-              onClick={() => router.push("/")}
-              className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm rounded-xl transition-colors cursor-pointer"
+            <div className="flex justify-between items-center">
+              <span style={{ color: "#94a3b8" }}>Customer</span>
+              <span className="font-bold" style={{ color: "#0f172a" }}>
+                Shalihati M. R.
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center">
+              <span style={{ color: "#94a3b8" }}>Ticket Type</span>
+              <span className="font-bold" style={{ color: "#0f172a" }}>
+                Presale (3x Ticket)
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center">
+              <span style={{ color: "#94a3b8" }}>Date & Time</span>
+              <span className="font-bold" style={{ color: "#0f172a" }}>
+                2026-11-15T16:00:00
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center">
+              <span style={{ color: "#94a3b8" }}>Location</span>
+              <span className="font-bold" style={{ color: "#0f172a" }}>
+                Bandung, West Java
+              </span>
+            </div>
+
+            <div 
+              className="flex justify-between items-center pt-2" 
+              style={{ borderTop: "1px solid #f1f5f9" }}
             >
-              Kembali ke Beranda
-            </button>
+              <span style={{ color: "#94a3b8" }}>Total Amount</span>
+              <span className="font-bold text-sm" style={{ color: "#059669" }}>
+                Rp 216.450
+              </span>
+            </div>
           </div>
 
+          {/* Area QR Code */}
+          <div 
+            className="p-6 rounded-2xl border text-center space-y-3"
+            style={{ backgroundColor: "#f8fafc", borderColor: "#f1f5f9" }}
+          >
+            <div 
+              className="p-3 rounded-xl inline-block border"
+              style={{ backgroundColor: "#ffffff", borderColor: "#e2e8f0" }}
+            >
+              <img
+                src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Chistix-Ticket-Shalihati"
+                alt="QR Code Ticket"
+                className="w-36 h-36 mx-auto object-contain"
+                crossOrigin="anonymous"
+              />
+            </div>
+            <p className="text-[11px]" style={{ color: "#94a3b8" }}>
+              Tunjukkan QR Code ini di pintu masuk acara
+            </p>
+          </div>
         </div>
+
+        {/* TOMBOL AKSI */}
+        <div className="space-y-2 pt-1">
+          <button
+            type="button"
+            onClick={handleDownloadPDF}
+            disabled={isDownloading}
+            className="w-full py-3 bg-[#FF8A00] hover:bg-[#E07B00] disabled:bg-amber-300 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer shadow-xs text-center"
+          >
+            {isDownloading ? "Mengunduh PDF..." : "Download E-Ticket (PDF)"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-colors cursor-pointer text-center"
+          >
+            Kembali ke Beranda
+          </button>
+        </div>
+
       </div>
     </div>
-  );
-}
-
-export default function TicketSuccessPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-xs text-slate-400">Loading...</div>}>
-      <TicketSuccessContent />
-    </Suspense>
   );
 }

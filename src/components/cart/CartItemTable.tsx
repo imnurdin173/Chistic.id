@@ -3,13 +3,23 @@
 import React from "react";
 
 interface CartItemTableProps {
+  eventTitle: string;
+  organizerName?: string;
   quantity: number;
   setQuantity: (qty: number) => void;
+  variant?: string;
+  basePrice: number;
 }
 
-export default function CartItemTable({ quantity, setQuantity }: CartItemTableProps) {
-  const basePricePerTicket = 550000;
-  const totalPrice = basePricePerTicket * quantity;
+export default function CartItemTable({
+  eventTitle,
+  organizerName = "Nusantara Orchestra Productions",
+  quantity,
+  setQuantity,
+  variant = "Presale",
+  basePrice,
+}: CartItemTableProps) {
+  const totalPrice = basePrice * quantity;
 
   const handleDecrease = () => {
     if (quantity > 1) {
@@ -21,9 +31,7 @@ export default function CartItemTable({ quantity, setQuantity }: CartItemTablePr
     setQuantity(quantity + 1);
   };
 
-  const formatRupiah = (num: number) => {
-    return "Rp " + num.toLocaleString("id-ID");
-  };
+  const formatRupiah = (num: number) => "Rp " + num.toLocaleString("id-ID");
 
   return (
     <div className="space-y-3">
@@ -38,12 +46,11 @@ export default function CartItemTable({ quantity, setQuantity }: CartItemTablePr
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-slate-800 truncate">
-              Resonance Soundfest 2026: Intimate Live Performance
-            </h3>
-            <p className="text-xs text-slate-500">Soundwave Entertainment</p>
+            <h3 className="text-sm font-bold text-slate-800 truncate">{eventTitle}</h3>
+            <p className="text-xs text-slate-500">{organizerName}</p>
+
             <div className="mt-1.5 inline-block px-2.5 py-0.5 bg-amber-50 border border-amber-200 rounded-md text-[11px] font-bold text-amber-700">
-              Pre Sale VIP
+              {variant}
             </div>
           </div>
         </div>
@@ -54,7 +61,7 @@ export default function CartItemTable({ quantity, setQuantity }: CartItemTablePr
               type="button"
               onClick={handleDecrease}
               disabled={quantity <= 1}
-              className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-200 disabled:opacity-40 disabled:hover:bg-transparent transition-colors cursor-pointer"
+              className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition cursor-pointer"
             >
               -
             </button>
@@ -64,7 +71,7 @@ export default function CartItemTable({ quantity, setQuantity }: CartItemTablePr
             <button
               type="button"
               onClick={handleIncrease}
-              className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
+              className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
             >
               +
             </button>
@@ -75,7 +82,7 @@ export default function CartItemTable({ quantity, setQuantity }: CartItemTablePr
               {formatRupiah(totalPrice)}
             </div>
             <div className="text-[11px] text-slate-400 font-medium">
-              @ {formatRupiah(basePricePerTicket)}
+              @ {formatRupiah(basePrice)}
             </div>
           </div>
         </div>
