@@ -169,76 +169,119 @@ export async function getEventDetailController(eventId: string) {
 }
 
 export async function updateEventController(eventId: string, inputData: unknown) {
-    const validation = createEventSchema.safeParse(inputData)
-    if(!validation.success){
-        return {
-            sucess: false,
-            statusCode: 400,
-            message: "Validasi update gagal",
-            errors: validation.error.flatten()
-        }
-    }
-
-    const {title, category, startDate, endDate, description, province, city, venueDetail, venueMaps, totalTicket, ticketTiers} = validation.data
-
-    const existingEvent = await prisma.event.findUnique({
-        where: {id: eventId},
-    })
-
-    if(!existingEvent){
-        return {
-            sucess: false,
-            statusCode: 400,
-            message: "Event tidak ditemukan"
-        }
-    }
-
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    const dynamicStatus = calculateEventStatus(start, end)
-
-    const updateEvent = await prisma.$transaction(async (tx) => {
-        const event = await tx.event.update({
-            where: {id: eventId},
-            data: {
-                title,
-                category,
-                startDate: start,
-                endDate: end,
-                description,
-                province,
-                city,
-                venueDetail,
-                venueMaps: venueMaps || null,
-                totalTicket,
-                status: dynamicStatus
-            }
-        })
-
-        for(const tier of ticketTiers) {
-            const existingTier = await tx.ticketTier.findFirst({
-                where: {eventId, name: tier.name}
-            })
-
-            if(existingTier){
-                await tx.ticketTier.update({
-                    where: {id: existingTier.id},
-                    data: {
-                        price: tier.price.toString(),
-                        finalPrice: tier.finalPrice.toString(),
-                        quota: tier.quota
-                    }
-                })
-            }
-        }
-
-        return event
-    })
-
+  const validation = createEventSchema.safeParse(inputData);
+  if (!validation.success) {
     return {
-        success: true,
-        statusCode: 200,
-        message: "Event berhasil diperbarui",
-        data: updateEvent
+      success: false,
+      statusCode: 400,
+      message: "Validasi update gagal",
+      errors: validation.error.flatten(),
+    };
+  }
+  const {
+    title,
+    category,
+    startDate,
+    endDate,
+    description,
+    province,
+    city,
+    venueDetail,
+    venueMaps,
+    totalTicket,
+    ticketTiers,
+  } = validation.data;
+  const existingEvent = await prisma.event.findUnique({
+    where: { id: eventId },
+  });
+  if (!existingEvent) {
+    return {
+      success: false,
+      statusCode: 404,
+      message: "Event tidak ditemukan",
+    };
+  }
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const dynamicStatus = calculateEventStatus(start, end);
+
+  const updatedEvent = await prisma.$transaction(async (tx) => {
+    // 1. Update data event
+    const event = await tx.event.update({
+      where: { id: eventId },
+      data: {
+        title,
+        category,
+        startDate: start,
+        endDate: end,
+        description,
+        province,
+        city,
+        venueDetail,
+        venueMaps: venueMaps || null,
+        totalTicket,
+        status: dynamicStatus,
+      },
+    });
+    
+    // 2. Hapus tier lama event ini & insert tier terbaru
+    await tx.ticketTier.deleteMany({
+      where: { eventId: eventId },
+    });
+    for (const tier of ticketTiers) {
+      await tx.ticketTier.create({
+        data: {
+          eventId: eventId,
+          name: tier.name,
+          price: tier.price.toString(),
+          finalPrice: tier.finalPrice.toString(),
+          quota: tier.quota,
+        },
+      });
     }
+    return event;
+  });
+  return {
+    success: true,
+    statusCode: 200,
+    message: "Event berhasil diperbarui",
+    data: updatedEvent,
+  };
+}
+
+// 5. Controller: Soft Delete Event
+
+export async function softDeleteEventController(eventId: string) {
+  const existingEvent = await prisma.event.findUnique({
+    where: { id: eventId },
+  });
+  if (!existingEvent) {
+    return {
+      success: false,
+      statusCode: 404,
+      message: "Event tidak ditemukan",
+    };
+  }
+
+  // Hanya boleh delete jika status DRAFT atau UPCOMING
+  const statusStr = existingEvent.status.replace("_", " ").toUpperCase();
+  if (statusStr !== "DRAFT" && statusStr !== "UPCOMING") {
+    return {
+      success: false,
+      statusCode: 400,
+      message: "Hanya event berstatus DRAFT atau UPCOMING yang dapat dihapus!",
+    };
+  }
+  // Set deletedAt (Soft Delete)
+  await prisma.event.update({
+    where: { id: eventId },
+    data: {
+      deletedAt: new Date(),
+    },
+  });
+  return {
+    success: true,
+    statusCode: 200,
+    message: `Event "${existingEvent.title}" berhasil dihapus (Soft Delete)!`,
+  };
 }
