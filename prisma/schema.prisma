@@ -12,33 +12,61 @@ enum Role {
   ORGANIZER
 }
 
+enum EventCategoryEnum {
+  MUSIC
+  SEMINAR
+  TALKSHOW
+  SPORTS
+  EXHIBITION
+}
+
+enum EventStatusEnum {
+  DRAFT
+  UPCOMING
+  ON_STAGE
+  ENDED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum TransactionStatus {
+  WAITING_PAYMENT
+  WAITING_CONFIRM
+  DONE
+  REJECTED
+  EXPIRED
+  CANCELED
+}
+
 model User {
   id            String   @id
   name          String
-  email         String
+  email         String   @unique
   emailVerified Boolean  @default(false)
   image         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt
 
-  // ---- kolom tambahan milik Chistix ----
+  // ---- Kolom Tambahan Chistix ----
   role         Role          @default(CUSTOMER)
   referralCode String?
-  points       Decimal?
+  points       Int?          @default(0)
   sessions     Session[]
   accounts     Account[]
   events       Event[]
   transactions Transaction[]
   reviews      Review[]
 
-  @@unique([email])
   @@map("user")
 }
 
 model Session {
   id        String   @id
   expiresAt DateTime
-  token     String
+  token     String   @unique
   createdAt DateTime
   updatedAt DateTime
   ipAddress String?
@@ -46,7 +74,6 @@ model Session {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
   @@map("session")
 }
 
@@ -81,35 +108,6 @@ model Verification {
   @@map("verification")
 }
 
-enum EventCategoryEnum {
-  MUSIC
-  SEMINAR
-  TALKSHOW
-  SPORTS
-  EXHIBITION
-}
-
-enum EventStatusEnum {
-  DRAFT
-  UPCOMING
-  ON_STAGE
-  ENDED
-}
-
-enum DiscountType {
-  PERCENTAGE
-  FIXED
-}
-
-enum TransactionStatus {
-  WAITING_PAYMENT
-  WAITING_CONFIRM
-  DONE
-  REJECTED
-  EXPIRED
-  CANCELED
-}
-
 model Event {
   id          String            @id @default(uuid())
   organizerId String
@@ -117,15 +115,15 @@ model Event {
   title       String
   category    EventCategoryEnum @default(MUSIC)
 
-  startDate DateTime  @default(now())
-  endDate DateTime  @default(now())
+  startDate DateTime @default(now())
+  endDate   DateTime @default(now())
 
-  description String            @db.Text
+  description String  @db.Text
   province    String
   city        String
   venueMaps   String?
   venueDetail String
-  totalTicket Int               @default(0)
+  totalTicket Int     @default(0)
 
   thumbnailImage String?
   coverImages    String[] @default([])
@@ -153,10 +151,10 @@ model TicketTier {
   event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   name       String
-  price      Decimal
-  finalPrice Decimal
+  price      Int
+  finalPrice Int
   quota      Int
-  sold       Int     @default(0)
+  sold       Int    @default(0)
 
   isPresale    Boolean   @default(false)
   preSaleStart DateTime?
@@ -177,15 +175,15 @@ model Voucher {
 
   code         String       @unique
   discountType DiscountType @default(PERCENTAGE)
-  discount     Decimal      @db.Decimal(12, 2)
+  discount     Int
   validStart   DateTime
   validEnd     DateTime
   usedCount    Int          @default(0)
   maxUsage     Int          @default(100)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   transactions Transaction[]
 
@@ -201,14 +199,14 @@ model Transaction {
   event   Event  @relation(fields: [eventId], references: [id])
 
   ticketTierId String
-  tickerTier   TicketTier @relation(fields: [ticketTierId], references: [id])
+  ticketTier   TicketTier @relation(fields: [ticketTierId], references: [id])
 
   voucherId String?
   voucher   Voucher? @relation(fields: [voucherId], references: [id])
 
   status     TransactionStatus @default(WAITING_PAYMENT)
   quantity   Int               @default(1)
-  totalPrice Decimal
+  totalPrice Int
   pointUsed  Int               @default(0)
 
   paymentProof         String?
@@ -227,7 +225,7 @@ model Transaction {
 model ETicket {
   id            String      @id @default(uuid())
   transactionId String
-  transcation   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 
   ticketCode String    @unique
   qrPayLoad  String    @db.Text
