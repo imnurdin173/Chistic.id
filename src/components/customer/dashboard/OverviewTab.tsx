@@ -2,19 +2,29 @@
 
 import React, { useState } from "react";
 import { AlertCircle, Copy, Check } from "lucide-react";
-import { TabType } from "@/app/customer/dashboard/page";
+import { TabType, AttendedEvent, TransactionItem } from "@/app/customer/dashboard/page";
 import UploadPaymentModal from "./UploadPaymentModal";
 
 interface OverviewTabProps {
   setActiveTab: (tab: TabType) => void;
+  points?: number;
+  attendedEvents?: AttendedEvent[];
+  upcomingTicketsCount?: number;
+  transactions?: TransactionItem[];
 }
 
-export default function OverviewTab({ setActiveTab }: OverviewTabProps) {
+export default function OverviewTab({
+  setActiveTab,
+  points = 0,
+  attendedEvents = [],
+  upcomingTicketsCount = 1,
+  transactions = [],
+}: OverviewTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Contoh variabel logika untuk review (bisa diganti state/props dari data asli nantinya)
-  const pendingReviewsCount = 1; // Ubah jadi 0 jika semua sudah direview
+  const eventsAttendedCount = attendedEvents.length;
+  const pendingReviewsCount = attendedEvents.length;
 
   const handleCopy = () => {
     navigator.clipboard.writeText("CHX-7K2P9");
@@ -58,8 +68,10 @@ export default function OverviewTab({ setActiveTab }: OverviewTabProps) {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <div className="rounded-xl bg-[#38383A] p-4 text-white">
           <p className="text-[11px] text-neutral-300">Points Balance</p>
-          <p className="mt-1 text-xl font-bold">20.000 P</p>
-          <p className="mt-2 text-[10px] text-neutral-400">Expires at 28 Dec 2026</p>
+          <p className="mt-1 text-xl font-bold">{points.toLocaleString("id-ID")} P</p>
+          <p className="mt-2 text-[10px] text-neutral-400">
+            {points > 0 ? "Expires at 28 Dec 2026" : "No points yet"}
+          </p>
         </div>
 
         <div className="rounded-xl bg-[#38383A] p-4 text-white">
@@ -70,14 +82,13 @@ export default function OverviewTab({ setActiveTab }: OverviewTabProps) {
 
         <div className="rounded-xl bg-[#38383A] p-4 text-white">
           <p className="text-[11px] text-neutral-300">Upcoming Tickets</p>
-          <p className="mt-1 text-xl font-bold">2</p>
+          <p className="mt-1 text-xl font-bold">{upcomingTicketsCount}</p>
           <p className="mt-2 text-[10px] text-neutral-400">Next ticket 2 Nov 2026</p>
         </div>
 
-        {/* Card ke-4 dengan logika dinamis */}
         <div className="rounded-xl bg-[#38383A] p-4 text-white">
           <p className="text-[11px] text-neutral-300">Events attended</p>
-          <p className="mt-1 text-xl font-bold">3</p>
+          <p className="mt-1 text-xl font-bold">{eventsAttendedCount}</p>
           <p className="mt-2 text-[10px] text-amber-400">
             {pendingReviewsCount > 0
               ? `${pendingReviewsCount} event${pendingReviewsCount > 1 ? "s" : ""} need to review`
@@ -102,33 +113,27 @@ export default function OverviewTab({ setActiveTab }: OverviewTabProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-50 text-neutral-600 align-top">
-                <tr>
-                  <td className="py-3 font-medium text-neutral-800 pr-4">
-                    Resonance Soundfest 2026: Intimate Live Performance
-                  </td>
-                  <td className="py-3 text-center px-3 whitespace-nowrap">x1</td>
-                  <td className="py-3 text-center px-3 whitespace-nowrap">VIP</td>
-                  <td className="py-3 text-center px-3 font-semibold text-amber-500 whitespace-nowrap">Waiting Payment</td>
-                  <td className="py-3 text-right font-semibold text-neutral-900 whitespace-nowrap">Rp. 550.000,00</td>
-                </tr>
-                <tr>
-                  <td className="py-3 font-medium text-neutral-800 pr-4">
-                    Jazz evening at the Park
-                  </td>
-                  <td className="py-3 text-center px-3 whitespace-nowrap">x2</td>
-                  <td className="py-3 text-center px-3 whitespace-nowrap">Regular</td>
-                  <td className="py-3 text-center px-3 font-semibold text-emerald-600 whitespace-nowrap">Done</td>
-                  <td className="py-3 text-right font-semibold text-neutral-900 whitespace-nowrap">Rp. 300.000,00</td>
-                </tr>
-                <tr>
-                  <td className="py-3 font-medium text-neutral-800 pr-4">
-                    Indie Wave Fest: Sunset Beach Session
-                  </td>
-                  <td className="py-3 text-center px-3 whitespace-nowrap">x1</td>
-                  <td className="py-3 text-center px-3 whitespace-nowrap">Presale</td>
-                  <td className="py-3 text-center px-3 font-semibold text-red-500 whitespace-nowrap">Canceled</td>
-                  <td className="py-3 text-right font-semibold text-neutral-900 whitespace-nowrap">Rp. 550.000,00</td>
-                </tr>
+                {transactions.map((trx) => (
+                  <tr key={trx.id}>
+                    <td className="py-3 font-medium text-neutral-800 pr-4">{trx.title}</td>
+                    <td className="py-3 text-center px-3 whitespace-nowrap">{trx.qty}</td>
+                    <td className="py-3 text-center px-3 whitespace-nowrap">{trx.ticketType}</td>
+                    <td
+                      className={`py-3 text-center px-3 font-semibold whitespace-nowrap ${
+                        trx.status === "Waiting Payment"
+                          ? "text-amber-500"
+                          : trx.status === "Done"
+                          ? "text-emerald-600"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {trx.status}
+                    </td>
+                    <td className="py-3 text-right font-semibold text-neutral-900 whitespace-nowrap">
+                      {trx.price}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

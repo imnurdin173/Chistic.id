@@ -2,8 +2,13 @@
 
 import React, { useState } from "react";
 import UploadPaymentModal from "./UploadPaymentModal";
+import { TransactionItem } from "@/app/customer/dashboard/page";
 
-export default function TransactionsTab() {
+interface TransactionsTabProps {
+  transactions?: TransactionItem[];
+}
+
+export default function TransactionsTab({ transactions = [] }: TransactionsTabProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -18,34 +23,53 @@ export default function TransactionsTab() {
           <thead className="border-b border-neutral-100 text-neutral-400">
             <tr>
               <th className="pb-3 font-medium">Event Name</th>
-              <th className="pb-3 font-medium">Ticket Type</th>
-              <th className="pb-3 font-medium">Date</th>
-              <th className="pb-3 font-medium">Status</th>
-              <th className="pb-3 text-right font-medium">Action</th>
+              <th className="pb-3 font-medium text-center px-3">Ticket Type</th>
+              <th className="pb-3 font-medium text-center px-3">Qty</th>
+              <th className="pb-3 font-medium text-center px-3">Status</th>
+              <th className="pb-3 font-medium text-right">Price / Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50 text-neutral-700">
-            <tr>
-              <td className="py-4 font-semibold">Resonance Soundfest 2026: Live Performance</td>
-              <td className="py-4">Presale VIP (x1)</td>
-              <td className="py-4">20 Oct 2026</td>
-              <td className="py-4 font-semibold text-amber-500">Waiting Payment</td>
-              <td className="py-4 text-right">
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 transition-colors"
-                >
-                  Upload Proof
-                </button>
-              </td>
-            </tr>
-            <tr>
-              <td className="py-4 font-semibold">Jazz Evening at the Park</td>
-              <td className="py-4">Regular (x2)</td>
-              <td className="py-4">15 Sep 2026</td>
-              <td className="py-4 font-semibold text-emerald-600">Done</td>
-              <td className="py-4 text-right text-neutral-400">-</td>
-            </tr>
+            {transactions.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-6 text-center text-neutral-400">
+                  Belum ada riwayat transaksi.
+                </td>
+              </tr>
+            ) : (
+              transactions.map((trx) => (
+                <tr key={trx.id}>
+                  <td className="py-4 font-semibold text-neutral-900 pr-4">{trx.title}</td>
+                  <td className="py-4 text-center px-3 whitespace-nowrap">{trx.ticketType}</td>
+                  <td className="py-4 text-center px-3 whitespace-nowrap">{trx.qty}</td>
+                  <td
+                    className={`py-4 text-center px-3 font-semibold whitespace-nowrap ${
+                      trx.status === "Waiting Payment"
+                        ? "text-amber-500"
+                        : trx.status === "Done"
+                        ? "text-emerald-600"
+                        : "text-red-500"
+                    }`}
+                  >
+                    {trx.status}
+                  </td>
+                  <td className="py-4 text-right font-semibold text-neutral-900 whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-3">
+                      <span>{trx.price}</span>
+                      {trx.status === "Waiting Payment" && (
+                        <button
+                          type="button"
+                          onClick={() => setIsModalOpen(true)}
+                          className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 transition-colors"
+                        >
+                          Upload Proof
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

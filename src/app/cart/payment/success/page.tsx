@@ -137,8 +137,9 @@ function PaymentSuccessContent() {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-slate-400">Date & Time</span>
+            {/* DIPERBAIKI: Menggunakan formatEventDate agar rapi */}
             <span className="font-bold text-slate-900">
-              {selectedEvent.date || "2026-11-15T16:00:00"}
+              {formatEventDate(selectedEvent.date)}
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -185,7 +186,7 @@ function PaymentSuccessContent() {
         </button>
       </div>
 
-      {/* 2. TEMPLATE PDF TERSEMBUNYI (Menggunakan tag <img> API QR agar aman dari error SVG lab()) */}
+      {/* 2. TEMPLATE PDF TERSEMBUNYI */}
       <div style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
         <div ref={pdfContainerRef} style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
           {tickets.map((ticket) => (
@@ -267,7 +268,7 @@ function PaymentSuccessContent() {
                 </div>
               </div>
 
-              {/* QR Code menggunakan Image URL agar html2canvas tidak crash pada elemen SVG */}
+              {/* QR Code */}
               <div style={{ marginTop: "24px", marginBottom: "8px", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <img
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=TIX-${ticket.id}`}
