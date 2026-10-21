@@ -41,6 +41,12 @@ enum TransactionStatus {
   CANCELED
 }
 
+enum TicketType {
+  PRESALE
+  REGULAR
+  VIP
+}
+
 model User {
   id            String   @id
   name          String
@@ -119,17 +125,33 @@ model Event {
   endDate   DateTime @default(now())
 
   description String  @db.Text
-  province    String
-  city        String
+  provinceId  String
+  provinceName    String
+  cityId        String
+  cityName  String
   venueMaps   String?
   venueDetail String
-  totalTicket Int     @default(0)
+  totalQuotaTiket Int     @default(0)
 
-  thumbnailImage String?
+  ticketType  TicketType
+
+  vipQuota  Int
+  vipPriceNormal  Int
+  vipPriceFinal Int
+
+  regularQuota  Int
+  regularPriceNormal Int
+  regularPriceFinal  Int
+
+  presaleQuota  Int
+  presalePriceNormal  Int
+  presalePriceFinal Int
+  
+  thumbnailImage String
   coverImages    String[] @default([])
   videoUrl       String?
 
-  status                EventStatusEnum @default(DRAFT)
+  eventStatus                EventStatusEnum @default(DRAFT)
   scheduledPublishStart DateTime?
   scheduledPublishEnd   DateTime?
 
@@ -137,36 +159,13 @@ model Event {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  ticketTiers  TicketTier[]
   vouchers     Voucher[]
   transactions Transaction[]
-  reviews      Review[]
+  reviewRating      Review[]
 
   @@map("events")
 }
 
-model TicketTier {
-  id      String @id @default(uuid())
-  eventId String
-  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
-
-  name       String
-  price      Int
-  finalPrice Int
-  quota      Int
-  sold       Int    @default(0)
-
-  isPresale    Boolean   @default(false)
-  preSaleStart DateTime?
-  preSaleEnd   DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  transactions Transaction[]
-
-  @@map("ticket_tiers")
-}
 
 model Voucher {
   id      String @id @default(uuid())
@@ -198,20 +197,19 @@ model Transaction {
   eventId String
   event   Event  @relation(fields: [eventId], references: [id])
 
-  ticketTierId String
-  ticketTier   TicketTier @relation(fields: [ticketTierId], references: [id])
-
   voucherId String?
   voucher   Voucher? @relation(fields: [voucherId], references: [id])
 
   status     TransactionStatus @default(WAITING_PAYMENT)
   quantity   Int               @default(1)
+  normalPrice Int
   totalPrice Int
+  discPrice Int
   pointUsed  Int               @default(0)
 
   paymentProof         String?
   paymentDeadline      DateTime
-  adminConfirmDeadline DateTime?
+  ConfirmDeadline DateTime?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -228,17 +226,18 @@ model ETicket {
   transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 
   ticketCode String    @unique
-  qrPayLoad  String    @db.Text
   isAttended Boolean   @default(false)
   attendedAt DateTime?
+  qrToken String  @unique @default(uuid())
   pdfUrl     String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  deletedAt DateTime?
+  
   reviews Review[]
 
-  @@map("e_tickets")
+  @@map("ETicket")
 }
 
 model Review {
@@ -252,10 +251,11 @@ model Review {
   eTicketId String
   eTicket   ETicket @relation(fields: [eTicketId], references: [id])
 
-  rating    Int
-  comment   String    @db.Text
-  reply     String?   @db.Text
-  repliedAt DateTime?
+  ratingScore    Int
+  reviewDesc   String?    @db.Text
+  orgReply     String?   @db.Text
+  reviewCustomerAt DateTime
+  orgReplyAt DateTime
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

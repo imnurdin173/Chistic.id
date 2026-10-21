@@ -8,9 +8,9 @@ import AttendeeListAction from "@/components/dashboard/events/AttendeeListAction
 import QRListAction from "@/components/dashboard/events/QRListAction";
 import EditEventAction from "@/components/dashboard/events/EditEventAction";
 import { EventItem, EventStatus } from "@/types/event";
-import { PencilSquareIcon, UserGroupIcon, QrCodeIcon, ArrowUpCircleIcon, ChartBarIcon, MagnifyingGlassIcon, PlusIcon, StopCircleIcon } from "@heroicons/react/24/outline";
-import NavbarNotLoggedIn from "@/components/menubar/navbar";
+import { PencilSquareIcon, UserGroupIcon, QrCodeIcon, ArrowUpCircleIcon, ChartBarIcon, MagnifyingGlassIcon, PlusIcon, StopCircleIcon, TrashIcon } from "@heroicons/react/24/outline";
 import Footer from "@/components/menubar/footer";
+import NavbarOrganizer from "@/components/menubar/navbarOrganizer";
 
 const DUMMY_EVENTS: EventItem[] = [
   {
@@ -185,6 +185,9 @@ export default function Eventspage() {
   const [editTarget, setEditTarget] = useState<EventItem | null>(null);
   const [isEditActionOpen, setIsEditActionOpen] = useState(false);
 
+  const [deleteTarget, setDeleteTarget] = useState<EventItem | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   const statusPriority: Record<string, number> = {
     "ON STAGE": 1,
     UPCOMING: 2,
@@ -227,9 +230,28 @@ export default function Eventspage() {
     setEvents((prev) => prev.map((e) => (e.id === eventId ? { ...e, status: "ENDED" } : e)));
   };
 
+  const handleExecuteDelete = async () => {
+    if(!deleteTarget) return
+    try {
+      setIsDeleting(true)
+      const res = await fetch(`/api/organizer/events/${deleteTarget.id}`, {
+        method: "DELETE",
+      })
+      const json = await res.json()
+      if(!res.ok) throw new Error(json.message)
+      
+      fetchEvents()
+      setDeleteTarget(null)
+    } catch (err: any) {
+      alert("Gagal menghapus: " + err.message)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 font-sans flex flex-col justify-between">
-      <NavbarNotLoggedIn />
+      <NavbarOrganizer />
       <div className="flex-1 w-full p-4 md:p-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
           <Sidebar />
@@ -298,6 +320,8 @@ export default function Eventspage() {
                   ) : (
                     sortedEvents.map((event) => {
                       const totalSold = event.ticketTiers.reduce((sum, t) => sum + t.sold, 0);
+                      const status = (event.status || "").replace(/\s+/g, "_").toUpperCase();
+
                       return (
                         <tr key={event.id} className="hover:bg-neutral-50/50 transition-colors">
                           <td className="py-4 pr-4 max-w-64">
@@ -322,7 +346,8 @@ export default function Eventspage() {
                           </td>
                           <td className="py-4 text-center">
                             <div className="flex items-center justify-center gap-2">
-                              {event.status !== "ENDED" && (
+
+                              {status !== "ENDED" && (
                                 <Link
                                   href={`/organizer/dashboard/events/edit/${event.id}`}
                                   className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-[#BB4D00] hover:bg-[#FFF5ED] transition-colors cursor-pointer"
@@ -332,7 +357,7 @@ export default function Eventspage() {
                                 </Link>
                               )}
 
-                              {(event.status === "UPCOMING" || event.status === "ON STAGE" || event.status === "ENDED") && (
+                              {status === "ON_STAGE" && (
                                 <button
                                   onClick={() => {
                                     setAttendeeTarget(event);
@@ -345,18 +370,21 @@ export default function Eventspage() {
                                 </button>
                               )}
 
-                              {(event.status === "UPCOMING" || event.status === "ON STAGE") && (
-                                <Link
-                                  href={`/organizer/dashboard/scanner?eventId=${event.id}`}
-                                  className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
-                                    event.status === "ON STAGE" ? "text-[#EA580C] bg-orange-50 hover:bg-orange-100" : "text-neutral-400 hover:text-blue-600 hover:bg-blue-50"
-                                  }`}
+                              {status === "ON_STAGE" && (
+                                <button
+                                  onClick={() => {
+                                    if(confirm(`Apakah event "${event.title}" telah selesai dan ingin ditutup (ENDED)?`)) {
+                                      handleEndEvent(event.id);
+                                    }
+                                  }}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                  title="Stop Event (set to Ended)"
                                 >
-                                  <QrCodeIcon className="w-4.5 h-4.5 text-black/80 hover:text-blue-600" />
-                                </Link>
+                                  <StopCircleIcon className="w-4.5 h-4.5 hover:text-rose-600" />
+                                </button>
                               )}
 
-                              {event.status === "DRAFT" && (
+                              {status === "DRAFT" && (
                                 <button
                                   onClick={() => {
                                     setPublishTarget(event);
@@ -365,25 +393,21 @@ export default function Eventspage() {
                                   className="w-8 h-8 flex items-center justify-center rounded-lg text-amber-400 hover:text-amber-500 hover:bg-amber-50 transition-colors cursor-pointer"
                                   title="Publish Event"
                                 >
-                                  <ArrowUpCircleIcon className="w-4.5 h-4.5 text-amber-500" />
+                                  <ArrowUpCircleIcon className="w-4.5 h-4.5" />
                                 </button>
                               )}
 
-                              {event.status === "ON STAGE" && (
+                              {(status === "DRAFT" || status === "UPCOMING") && (
                                 <button
-                                onClick={() => {
-                                  if(confirm(`Apakah konser ${event.title} telah selesai dan ingin ditutup (ENDED)?`)){
-                                    handleEndEvent(event.id)
-                                  }
-                                }}
-                                className="=w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                                title="Set this event to Ended"
+                                  onClick={() => setDeleteTarget(event)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                  title="Delete Event"
                                 >
-                                  <StopCircleIcon className="w-4.5 h-4.5 hover:text-rose-600" />
+                                  <TrashIcon className="w-4.5 h-4.5" />
                                 </button>
                               )}
 
-                              {event.status === "ENDED" && (
+                              {status === "ENDED" && (
                                 <button
                                   onClick={() => alert(`Event Summary Report: ${event.title}`)}
                                   className="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-purple-500 hover:bg-purple-50 transition-colors cursor-pointer"
@@ -392,6 +416,7 @@ export default function Eventspage() {
                                   <ChartBarIcon className="w-4.5 h-4.5 text-black/80 hover:text-purple-500" />
                                 </button>
                               )}
+
                             </div>
                           </td>
                         </tr>
@@ -404,6 +429,40 @@ export default function Eventspage() {
           </main>
         </div>
       </div>
+
+      {/* Modal Konfirmasi Delete Event (Soft Delete) */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop:blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl border border-neutral-100 text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 mx-auto flex items-center justify-center">
+              <TrashIcon className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-bold text-neutral-900 text-base">Delete event?</h3>
+              <p className="text-xs text-neutral-600 mt-1">
+                Are you sure want to delete <strong>{deleteTarget.title}</strong>? This action will be soft delete
+              </p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-2 rounded-full text-xs font-semibold text-neutral-600 border border-neutral-200 hover:bg-neutral-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteDelete}
+                disabled={isDeleting}
+                className="flex-1 py-2 rounded-full text-xs font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 cursor-pointer"
+              >
+                {isDeleting ? "Deleting ..." : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <PublishConfirmAction
         isOpen={isPublishActionOpen}

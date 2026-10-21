@@ -8,7 +8,7 @@ import AttendeeTable from "@/components/dashboard/attendees/AttendeeTable";
 import Pagination from "@/components/dashboard/transactions/Pagination";
 import { AttendeeItem } from "@/types/attendee";
 import Footer from "@/components/menubar/footer";
-import NavbarNotLoggedIn from "@/components/menubar/navbar";
+import NavbarOrganizer from "@/components/menubar/navbarOrganizer";
 
 const DUMMY_ATTENDEES: AttendeeItem[] = [
   {
@@ -136,7 +136,7 @@ export default function AttendeesPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 font-sans flex flex-col justify-between">
-      <NavbarNotLoggedIn />
+      <NavbarOrganizer />
       <div className="flex-1 w-full p-4 md:p-8">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
         <Sidebar />
