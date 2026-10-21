@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import SidebarDashboard from "@/components/sidebar/SidebarDashboard";
 import { ChevronRightIcon, HomeIcon } from "@heroicons/react/24/outline";
 import { EventFormData } from "@/types/event";
+import NavbarOrganizer from "@/components/menubar/navbarOrganizer";
+import Footer from "@/components/menubar/footer";
 
 const PROVINCES = [
   "DKI Jakarta",
@@ -60,6 +62,9 @@ export default function CreateEventPage() {
   const [regularFinalPrice, setRegularFinalPrice] = useState<number>(0);
 
   const [presaleQuota, setPresaleQuota] = useState<number>(0);
+
+  // State Peringatan Validasi Tier Tiket
+  const [tierWarning, setTierWarning] = useState(false);
 
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
@@ -155,7 +160,9 @@ export default function CreateEventPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 font-sans flex flex-col justify-between">
+      <NavbarOrganizer />
+      <div className="flex-1 w-full p-4 md:p-8">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
         <SidebarDashboard />
 
@@ -320,22 +327,27 @@ export default function CreateEventPage() {
               </div>
 
               {/* 2. TOTAL TICKET AMOUNT (PLAFON MAKSIMAL KUOTA) */}
+              {/* 2. TOTAL TICKET AMOUNT (PLAFON MAKSIMAL KUOTA) */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
                 <label className="text-sm font-medium text-neutral-700">Total Ticket Amount</label>
                 <div className="sm:col-span-2 flex items-center gap-3">
                   <input
                     type="number"
                     min={1}
+                    onWheel={(e) => e.currentTarget.blur()}
                     placeholder="Contoh: 500"
                     value={totalTicket || ""}
                     onChange={(e) => {
                       const val = Number(e.target.value);
                       setTotalTicket(val);
+                      if (val > 0) {
+                        setTierWarning(false);
+                      }
                       setVipQuota(0);
                       setRegularQuota(0);
                       setPresaleQuota(0);
                     }}
-                    className="w-36 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50 font-bold"
+                    className="w-36 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#BB4D00] bg-neutral-50 font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     required
                   />
                   <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
@@ -358,135 +370,187 @@ export default function CreateEventPage() {
                 </div>
               </div>
 
+              {/* Peringatan jika belum isi Total Ticket Amount */}
+              {tierWarning && (!totalTicket || totalTicket <= 0) && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-semibold animate-pulse">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>You must fill the Total Ticket Amount, before you fill the Ticket Tier</span>
+                </div>
+              )}
+
               <div className="border-t border-neutral-100 pt-2" />
 
-              {/* 3. VIP TIER (DISABLED JIKA TOTAL BELUM DIISI) */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                <label className="text-sm font-medium text-neutral-700 pl-4">VIP</label>
-                <div className="sm:col-span-2 flex flex-wrap gap-2.5 items-center text-xs text-neutral-500">
-                  <input
-                    type="number"
-                    min={0}
-                    max={vipQuota + remainingQuota}
-                    disabled={totalTicket <= 0}
-                    placeholder="Quota"
-                    value={vipQuota || ""}
-                    onChange={(e) => setVipQuota(Number(e.target.value))}
-                    className="w-20 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-neutral-900"
+              {/* TICKET TIERS WRAPPER (DISABLED JIKA TOTAL BELUM DIISI) */}
+              <div className={`relative space-y-4 ${!totalTicket || totalTicket <= 0 ? "opacity-60" : ""}`}>
+                {/* Transparent overlay untuk menangkap klik saat tier nonaktif */}
+                {(!totalTicket || totalTicket <= 0) && (
+                  <div
+                    onClick={() => setTierWarning(true)}
+                    className="absolute inset-0 z-20 cursor-not-allowed bg-transparent"
+                    title="You must fill the Total Ticket Amount, before you fill the Ticket Tier"
                   />
-                  <span>Normal Price</span>
-                  <input
-                    type="number"
-                    min={0}
-                    placeholder="0"
-                    value={vipPrice || ""}
-                    onChange={(e) => setVipPrice(Number(e.target.value))}
-                    className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm"
-                  />
-                  <span>Final Price</span>
-                  <input
-                    type="number"
-                    min={0}
-                    placeholder="0"
-                    value={vipFinalPrice || ""}
-                    onChange={(e) => setVipFinalPrice(Number(e.target.value))}
-                    className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm"
-                  />
-                </div>
-              </div>
+                )}
 
-              {/* 4. REGULAR TIER (DISABLED JIKA TOTAL BELUM DIISI) */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                <label className="text-sm font-medium text-neutral-700 pl-4">Regular</label>
-                <div className="sm:col-span-2 flex flex-wrap gap-2.5 items-center text-xs text-neutral-500">
-                  <input
-                    type="number"
-                    min={0}
-                    max={regularQuota + remainingQuota}
-                    disabled={totalTicket <= 0}
-                    placeholder="Quota"
-                    value={regularQuota || ""}
-                    onChange={(e) => setRegularQuota(Number(e.target.value))}
-                    className="w-20 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-neutral-900"
-                  />
-                  <span>Normal Price</span>
-                  <input
-                    type="number"
-                    min={0}
-                    placeholder="0"
-                    value={regularPrice || ""}
-                    onChange={(e) => setRegularPrice(Number(e.target.value))}
-                    className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm"
-                  />
-                  <span>Final Price</span>
-                  <input
-                    type="number"
-                    min={0}
-                    placeholder="0"
-                    value={regularFinalPrice || ""}
-                    onChange={(e) => setRegularFinalPrice(Number(e.target.value))}
-                    className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm"
-                  />
-                </div>
-              </div>
-
-              {/* Presale Toggle */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                <label className="text-sm font-medium text-neutral-700 pl-4">Presale Ticket</label>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleChange("presale", { ...form.presale, enabled: !form.presale?.enabled })}
-                    className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${
-                      form.presale?.enabled ? "bg-[#EA580C]" : "bg-neutral-200"
-                    }`}
-                  >
-                    <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all ${
-                      form.presale?.enabled ? "left-4.5" : "left-0.5"
-                    }`} />
-                  </button>
-                  <span className="text-xs text-neutral-500 font-medium">
-                    {form.presale?.enabled ? "Aktif" : "Tidak Aktif"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Presale Form */}
-              {form.presale?.enabled && (
-                <div className="ml-4 space-y-4 p-4 bg-orange-50/40 border border-orange-200 rounded-xl">
-                  <div className="grid grid-cols-3 gap-4 items-center">
-                    <label className="text-xs font-semibold text-neutral-700">Presale Quota</label>
+                {/* 3. VIP TIER */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                  <label className="text-sm font-medium text-neutral-700 pl-4">VIP</label>
+                  <div className="sm:col-span-2 flex flex-wrap gap-2.5 items-center text-xs text-neutral-500">
                     <input
                       type="number"
                       min={0}
-                      max={presaleQuota + remainingQuota}
-                      disabled={totalTicket <= 0}
+                      max={vipQuota + remainingQuota}
+                      disabled={!totalTicket || totalTicket <= 0}
+                      onWheel={(e) => e.currentTarget.blur()}
                       placeholder="Quota"
-                      value={presaleQuota || ""}
-                      onChange={(e) => setPresaleQuota(Number(e.target.value))}
-                      className="w-24 border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#BB4D00] bg-white font-semibold"
+                      value={vipQuota || ""}
+                      onChange={(e) => setVipQuota(Number(e.target.value))}
+                      className="w-20 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm disabled:opacity-40 font-semibold text-neutral-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 items-center">
-                    <label className="text-xs font-semibold text-neutral-700">Presale Period</label>
-                    <div className="col-span-2 flex items-center gap-2 text-xs text-neutral-500">
+                    <span>Normal Price</span>
+                    <div className="relative flex items-center">
+                      <span className="absolute left-2.5 text-xs text-neutral-400 font-semibold">IDR</span>
                       <input
-                        type="date"
-                        value={form.presale?.startDate}
-                        onChange={(e) => handleChange("presale", { ...form.presale, startDate: e.target.value })}
-                        className="border border-neutral-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#BB4D00] bg-white"
+                        type="number"
+                        min={0}
+                        disabled={!totalTicket || totalTicket <= 0}
+                        onWheel={(e) => e.currentTarget.blur()}
+                        placeholder="0"
+                        value={vipPrice || ""}
+                        onChange={(e) => setVipPrice(Number(e.target.value))}
+                        className="w-32 border border-neutral-200 rounded-lg pl-10 pr-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm disabled:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
-                      <span>until</span>
+                    </div>
+                    <span>Final Price</span>
+                    <div className="relative flex items-center">
+                      <span className="absolute left-2.5 text-xs text-neutral-400 font-semibold">IDR</span>
                       <input
-                        type="date"
-                        value={form.presale?.endDate}
-                        onChange={(e) => handleChange("presale", { ...form.presale, endDate: e.target.value })}
-                        className="border border-neutral-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#BB4D00] bg-white"
+                        type="number"
+                        min={0}
+                        disabled={!totalTicket || totalTicket <= 0}
+                        onWheel={(e) => e.currentTarget.blur()}
+                        placeholder="0"
+                        value={vipFinalPrice || ""}
+                        onChange={(e) => setVipFinalPrice(Number(e.target.value))}
+                        className="w-32 border border-neutral-200 rounded-lg pl-10 pr-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm disabled:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
                   </div>
                 </div>
-              )}
+
+                {/* 4. REGULAR TIER */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                  <label className="text-sm font-medium text-neutral-700 pl-4">Regular</label>
+                  <div className="sm:col-span-2 flex flex-wrap gap-2.5 items-center text-xs text-neutral-500">
+                    <input
+                      type="number"
+                      min={0}
+                      max={regularQuota + remainingQuota}
+                      disabled={!totalTicket || totalTicket <= 0}
+                      onWheel={(e) => e.currentTarget.blur()}
+                      placeholder="Quota"
+                      value={regularQuota || ""}
+                      onChange={(e) => setRegularQuota(Number(e.target.value))}
+                      className="w-20 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm disabled:opacity-40 font-semibold text-neutral-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <span>Normal Price</span>
+                    <div className="relative flex items-center">
+                      <span className="absolute left-2.5 text-xs text-neutral-400 font-semibold">IDR</span>
+                      <input
+                        type="number"
+                        min={0}
+                        disabled={!totalTicket || totalTicket <= 0}
+                        onWheel={(e) => e.currentTarget.blur()}
+                        placeholder="0"
+                        value={regularPrice || ""}
+                        onChange={(e) => setRegularPrice(Number(e.target.value))}
+                        className="w-32 border border-neutral-200 rounded-lg pl-10 pr-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm disabled:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    </div>
+                    <span>Final Price</span>
+                    <div className="relative flex items-center">
+                      <span className="absolute left-2.5 text-xs text-neutral-400 font-semibold">IDR</span>
+                      <input
+                        type="number"
+                        min={0}
+                        disabled={!totalTicket || totalTicket <= 0}
+                        onWheel={(e) => e.currentTarget.blur()}
+                        placeholder="0"
+                        value={regularFinalPrice || ""}
+                        onChange={(e) => setRegularFinalPrice(Number(e.target.value))}
+                        className="w-32 border border-neutral-200 rounded-lg pl-10 pr-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm disabled:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Presale Toggle */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                  <label className="text-sm font-medium text-neutral-700 pl-4">Presale Ticket</label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={!totalTicket || totalTicket <= 0}
+                      onClick={() => {
+                        if (!totalTicket || totalTicket <= 0) {
+                          setTierWarning(true);
+                          return;
+                        }
+                        handleChange("presale", { ...form.presale, enabled: !form.presale?.enabled });
+                      }}
+                      className={`relative w-10 h-6 rounded-full transition-colors ${
+                        !totalTicket || totalTicket <= 0 ? "opacity-50 cursor-not-allowed bg-neutral-200" : form.presale?.enabled ? "bg-[#EA580C] cursor-pointer" : "bg-neutral-200 cursor-pointer"
+                      }`}
+                    >
+                      <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all ${
+                        form.presale?.enabled ? "left-4.5" : "left-0.5"
+                      }`} />
+                    </button>
+                    <span className="text-xs text-neutral-500 font-medium">
+                      {form.presale?.enabled ? "Aktif" : "Tidak Aktif"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Presale Form */}
+                {form.presale?.enabled && (
+                  <div className="ml-4 space-y-4 p-4 bg-orange-50/40 border border-orange-200 rounded-xl">
+                    <div className="grid grid-cols-3 gap-4 items-center">
+                      <label className="text-xs font-semibold text-neutral-700">Presale Quota</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={presaleQuota + remainingQuota}
+                        disabled={!totalTicket || totalTicket <= 0}
+                        onWheel={(e) => e.currentTarget.blur()}
+                        placeholder="Quota"
+                        value={presaleQuota || ""}
+                        onChange={(e) => setPresaleQuota(Number(e.target.value))}
+                        className="w-24 border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#BB4D00] bg-white font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 items-center">
+                      <label className="text-xs font-semibold text-neutral-700">Presale Period</label>
+                      <div className="col-span-2 flex items-center gap-2 text-xs text-neutral-500">
+                        <input
+                          type="date"
+                          value={form.presale?.startDate}
+                          onChange={(e) => handleChange("presale", { ...form.presale, startDate: e.target.value })}
+                          className="border border-neutral-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#BB4D00] bg-white"
+                        />
+                        <span>until</span>
+                        <input
+                          type="date"
+                          value={form.presale?.endDate}
+                          onChange={(e) => handleChange("presale", { ...form.presale, endDate: e.target.value })}
+                          className="border border-neutral-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#BB4D00] bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Thumbnail Image */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
@@ -559,7 +623,9 @@ export default function CreateEventPage() {
 
           </div>
         </div>
+        </div>
       </div>
+      <Footer/>
     </div>
   );
 }

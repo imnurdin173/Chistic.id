@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import SidebarDashboard from "@/components/sidebar/SidebarDashboard";
 import NavbarNotLoggedIn from "@/components/menubar/navbar";
 import Footer from "@/components/menubar/footer";
-import { ChevronRightIcon, HomeIcon } from "@heroicons/react/24/outline";
+import { ChevronRightIcon, HomeIcon, CheckCircleIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { EventFormData } from "@/types/event";
 
 const PROVINCES = [
@@ -37,8 +37,13 @@ export default function EditEventPage({
   const eventId = resolvedParams.id;
 
   const [isLoading, setIsLoading] = useState(true);
+  const [modalFeedback, setModalFeedback] = useState<{
+    isOpen: boolean;
+    type: "SUCCESS" | "ERROR";
+    message: string;
+  }>({ isOpen: false, type: "SUCCESS", message: "" });
 
-  // State Form Utama
+  // State Form Utama (LENGKAP SAMA DENGAN CREATE EVENT)
   const [form, setForm] = useState<Partial<EventFormData>>({
     title: "",
     category: "Music",
@@ -55,11 +60,9 @@ export default function EditEventPage({
     scheduledPublishEnd: "",
   });
 
-  // State Tanggal & Jam
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // State Kuota & Harga Tier Tiket
   const [totalTicket, setTotalTicket] = useState<number>(0);
   const [vipQuota, setVipQuota] = useState<number>(0);
   const [vipPrice, setVipPrice] = useState<number>(0);
@@ -70,10 +73,8 @@ export default function EditEventPage({
   const [regularFinalPrice, setRegularFinalPrice] = useState<number>(0);
 
   const [presaleQuota, setPresaleQuota] = useState<number>(0);
-
   const [agreedToTerms, setAgreedToTerms] = useState(true);
 
-  // Kalkulasi Kuota Otomatis
   const allocatedQuota = vipQuota + regularQuota + (form.presale?.enabled ? presaleQuota : 0);
   const remainingQuota = totalTicket - allocatedQuota;
 
@@ -81,7 +82,7 @@ export default function EditEventPage({
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  // 1. TARIK DATA DARI DATABASE NEON SAAT HALAMAN DIBUKA (PRE-FILL FORM)
+  // 1. Tarik Data dari Database Neon
   useEffect(() => {
     const fetchEventDetail = async () => {
       try {
@@ -92,7 +93,6 @@ export default function EditEventPage({
         if (json.success && json.data) {
           const evt = json.data;
 
-          // Helper format ISO Date ke YYYY-MM-DDTHH:mm untuk input datetime-local
           const formatToDatetimeLocal = (dateString?: string) => {
             if (!dateString) return "";
             const d = new Date(dateString);
@@ -117,7 +117,6 @@ export default function EditEventPage({
           setEndDate(formatToDatetimeLocal(evt.endDate));
           setTotalTicket(Number(evt.totalTicket || 0));
 
-          // Pre-fill tier tiket VIP & Regular
           if (Array.isArray(evt.ticketTiers)) {
             const vip = evt.ticketTiers.find((t: any) => t.name.toUpperCase().includes("VIP"));
             const reg = evt.ticketTiers.find((t: any) => t.name.toUpperCase().includes("REGULAR") || t.name.toUpperCase().includes("REGULER"));
@@ -133,9 +132,6 @@ export default function EditEventPage({
               setRegularFinalPrice(Number(reg.finalPrice || reg.price || 0));
             }
           }
-        } else {
-          alert("Event tidak ditemukan dalam database!");
-          router.push("/organizer/dashboard/events");
         }
       } catch (err) {
         console.error("Gagal load detail event:", err);
@@ -147,27 +143,43 @@ export default function EditEventPage({
     if (eventId) {
       fetchEventDetail();
     }
-  }, [eventId, router]);
+  }, [eventId]);
 
-  // 2. KIRIM UPDATE KE DATABASE VIA HTTP PUT
+  // 2. Submit Perubahan via HTTP PUT
   const handleSaveUpdate = async () => {
     if (!agreedToTerms) {
-      alert("Harap setujui Terms & Conditions terlebih dahulu!");
+      setModalFeedback({
+        isOpen: true,
+        type: "ERROR",
+        message: "Harap setujui Terms & Conditions terlebih dahulu!",
+      });
       return;
     }
 
     if (!form.title || !startDate || !endDate || !form.description || !form.province || !form.city || !form.venueDetail) {
-      alert("Harap lengkapi semua field yang wajib diisi!");
+      setModalFeedback({
+        isOpen: true,
+        type: "ERROR",
+        message: "Harap lengkapi semua field yang wajib diisi!",
+      });
       return;
     }
 
     if (totalTicket <= 0) {
-      alert("Total Ticket Amount harus lebih besar dari 0!");
+      setModalFeedback({
+        isOpen: true,
+        type: "ERROR",
+        message: "Total Ticket Amount harus lebih besar dari 0!",
+      });
       return;
     }
 
     if (remainingQuota !== 0) {
-      alert(`Alokasi kuota tiket belum pas! Sisa kuota: ${remainingQuota} tiket. Total alokasi tiket VIP + Regular harus tepat sama dengan ${totalTicket}!`);
+      setModalFeedback({
+        isOpen: true,
+        type: "ERROR",
+        message: `Alokasi kuota tiket belum pas! Sisa kuota: ${remainingQuota} tiket. Total pembagian VIP + Regular harus tepat sama dengan ${totalTicket}!`,
+      });
       return;
     }
 
@@ -207,7 +219,6 @@ export default function EditEventPage({
           : { enabled: false },
       };
 
-      // Tembak Endpoint PUT
       const res = await fetch(`/api/organizer/events/${eventId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -220,11 +231,19 @@ export default function EditEventPage({
         throw new Error(json.message || "Gagal memperbarui event");
       }
 
-      alert("🎉 Sukses! Perubahan event berhasil diperbarui di database Neon!");
-      router.push("/organizer/dashboard/events");
+      // Tampilkan Pop-Up Sukses (Bukan Alert)
+      setModalFeedback({
+        isOpen: true,
+        type: "SUCCESS",
+        message: "Perubahan event berhasil disimpan ke database Neon!",
+      });
     } catch (err: any) {
       console.error(err);
-      alert("Terjadi kesalahan: " + err.message);
+      setModalFeedback({
+        isOpen: true,
+        type: "ERROR",
+        message: err.message || "Terjadi kesalahan saat menyimpan event",
+      });
     }
   };
 
@@ -273,15 +292,10 @@ export default function EditEventPage({
                 <>
                   <div className="p-6 md:p-8 space-y-5">
                     
-                    {/* Header Card */}
-                    <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-                      <div>
-                        <h1 className="text-xl font-bold text-neutral-900">Edit Event</h1>
-                        <p className="text-xs text-neutral-400 mt-0.5">Perbarui rincian event dan alokasi tiket Anda</p>
-                      </div>
-                      <span className="text-xs font-mono text-neutral-400 bg-neutral-100 px-3 py-1 rounded-full">
-                        ID: #{eventId}
-                      </span>
+                    {/* Header Card (SUDAH DIHILANGKAN BADGE ID SESUAI REQUEST KAMU!) */}
+                    <div className="pb-3 border-b border-neutral-100">
+                      <h1 className="text-xl font-bold text-neutral-900">Edit Event</h1>
+                      <p className="text-xs text-neutral-400 mt-0.5">Perbarui rincian event dan alokasi tiket Anda</p>
                     </div>
 
                     {/* Event Title */}
@@ -313,7 +327,7 @@ export default function EditEventPage({
                       </select>
                     </div>
 
-                    {/* Jadwal Event (Start & End Date-Time) */}
+                    {/* Jadwal Event */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
                       <label className="text-sm font-medium text-neutral-700 pt-2.5">
                         Event Schedule
@@ -457,10 +471,10 @@ export default function EditEventPage({
 
                     <div className="border-t border-neutral-100 pt-2" />
 
-                    {/* VIP Tier */}
+                    {/* VIP Tier (DENGAN PREFIX IDR DAN TANPA TOGGLE UP/DOWN) */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                      <label className="text-sm font-medium text-neutral-700 pl-4">VIP Tier</label>
-                      <div className="sm:col-span-2 flex flex-wrap gap-2.5 items-center text-xs text-neutral-500">
+                      <label className="text-sm font-medium text-neutral-700 pl-4">VIP</label>
+                      <div className="sm:col-span-2 flex flex-wrap gap-3 items-center text-xs text-neutral-500">
                         <input
                           type="number"
                           min={0}
@@ -469,33 +483,39 @@ export default function EditEventPage({
                           placeholder="Quota"
                           value={vipQuota || ""}
                           onChange={(e) => setVipQuota(Number(e.target.value))}
-                          className="w-20 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm disabled:opacity-40 font-semibold text-neutral-900"
+                          className="w-20 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm disabled:opacity-40 font-semibold text-neutral-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                         <span>Normal Price</span>
-                        <input
-                          type="number"
-                          min={0}
-                          placeholder="0"
-                          value={vipPrice || ""}
-                          onChange={(e) => setVipPrice(Number(e.target.value))}
-                          className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm"
-                        />
+                        <div className="relative flex items-center">
+                          <span className="absolute left-2.5 text-xs text-neutral-400 font-semibold">IDR</span>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="0"
+                            value={vipPrice || ""}
+                            onChange={(e) => setVipPrice(Number(e.target.value))}
+                            className="w-32 border border-neutral-200 rounded-lg pl-10 pr-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                        </div>
                         <span>Final Price</span>
-                        <input
-                          type="number"
-                          min={0}
-                          placeholder="0"
-                          value={vipFinalPrice || ""}
-                          onChange={(e) => setVipFinalPrice(Number(e.target.value))}
-                          className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm"
-                        />
+                        <div className="relative flex items-center">
+                          <span className="absolute left-2.5 text-xs text-neutral-400 font-semibold">IDR</span>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="0"
+                            value={vipFinalPrice || ""}
+                            onChange={(e) => setVipFinalPrice(Number(e.target.value))}
+                            className="w-32 border border-neutral-200 rounded-lg pl-10 pr-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                        </div>
                       </div>
                     </div>
 
-                    {/* Regular Tier */}
+                    {/* Regular Tier (DENGAN PREFIX IDR DAN TANPA TOGGLE UP/DOWN) */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
-                      <label className="text-sm font-medium text-neutral-700 pl-4">Regular Tier</label>
-                      <div className="sm:col-span-2 flex flex-wrap gap-2.5 items-center text-xs text-neutral-500">
+                      <label className="text-sm font-medium text-neutral-700 pl-4">Regular</label>
+                      <div className="sm:col-span-2 flex flex-wrap gap-3 items-center text-xs text-neutral-500">
                         <input
                           type="number"
                           min={0}
@@ -504,26 +524,117 @@ export default function EditEventPage({
                           placeholder="Quota"
                           value={regularQuota || ""}
                           onChange={(e) => setRegularQuota(Number(e.target.value))}
-                          className="w-20 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm disabled:opacity-40 font-semibold text-neutral-900"
+                          className="w-20 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm disabled:opacity-40 font-semibold text-neutral-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                         <span>Normal Price</span>
-                        <input
-                          type="number"
-                          min={0}
-                          placeholder="0"
-                          value={regularPrice || ""}
-                          onChange={(e) => setRegularPrice(Number(e.target.value))}
-                          className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm"
-                        />
+                        <div className="relative flex items-center">
+                          <span className="absolute left-2.5 text-xs text-neutral-400 font-semibold">IDR</span>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="0"
+                            value={regularPrice || ""}
+                            onChange={(e) => setRegularPrice(Number(e.target.value))}
+                            className="w-32 border border-neutral-200 rounded-lg pl-10 pr-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                        </div>
                         <span>Final Price</span>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-2.5 text-xs text-neutral-400 font-semibold">IDR</span>
+                          <input
+                            type="number"
+                            min={0}
+                            placeholder="0"
+                            value={regularFinalPrice || ""}
+                            onChange={(e) => setRegularFinalPrice(Number(e.target.value))}
+                            className="w-32 border border-neutral-200 rounded-lg pl-10 pr-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Presale Toggle */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-center">
+                      <label className="text-sm font-medium text-neutral-700 pl-4">Presale Ticket</label>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleChange("presale", { ...form.presale, enabled: !form.presale?.enabled })}
+                          className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${
+                            form.presale?.enabled ? "bg-[#EA580C]" : "bg-neutral-200"
+                          }`}
+                        >
+                          <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all ${
+                            form.presale?.enabled ? "left-4.5" : "left-0.5"
+                          }`} />
+                        </button>
+                        <span className="text-xs text-neutral-500 font-medium">
+                          {form.presale?.enabled ? "Aktif" : "Tidak Aktif"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Presale Form */}
+                    {form.presale?.enabled && (
+                      <div className="ml-4 space-y-4 p-4 bg-orange-50/40 border border-orange-200 rounded-xl">
+                        <div className="grid grid-cols-3 gap-4 items-center">
+                          <label className="text-xs font-semibold text-neutral-700">Presale Quota</label>
+                          <input
+                            type="number"
+                            min={0}
+                            max={presaleQuota + remainingQuota}
+                            disabled={totalTicket <= 0}
+                            placeholder="Quota"
+                            value={presaleQuota || ""}
+                            onChange={(e) => setPresaleQuota(Number(e.target.value))}
+                            className="w-24 border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#BB4D00] bg-white font-semibold"
+                          />
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 items-center">
+                          <label className="text-xs font-semibold text-neutral-700">Presale Period</label>
+                          <div className="col-span-2 flex items-center gap-2 text-xs text-neutral-500">
+                            <input
+                              type="date"
+                              value={form.presale?.startDate}
+                              onChange={(e) => handleChange("presale", { ...form.presale, startDate: e.target.value })}
+                              className="border border-neutral-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#BB4D00] bg-white"
+                            />
+                            <span>until</span>
+                            <input
+                              type="date"
+                              value={form.presale?.endDate}
+                              onChange={(e) => handleChange("presale", { ...form.presale, endDate: e.target.value })}
+                              className="border border-neutral-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#BB4D00] bg-white"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Thumbnail Image */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                      <label className="text-sm font-medium text-neutral-700">Thumbnail Image</label>
+                      <div className="sm:col-span-2">
                         <input
-                          type="number"
-                          min={0}
-                          placeholder="0"
-                          value={regularFinalPrice || ""}
-                          onChange={(e) => setRegularFinalPrice(Number(e.target.value))}
-                          className="w-28 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-[#BB4D00] bg-neutral-50 text-sm"
+                          type="file"
+                          accept="image/*"
+                          className="text-sm text-neutral-600 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border file:border-neutral-200 file:text-xs file:font-semibold file:bg-neutral-50 file:text-neutral-700 hover:file:bg-neutral-100 file:cursor-pointer cursor-pointer"
                         />
+                        <p className="text-xs text-neutral-400 mt-1">1:1 Aspect Ratio</p>
+                      </div>
+                    </div>
+
+                    {/* Cover Images */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 items-start">
+                      <label className="text-sm font-medium text-neutral-700">Images Cover</label>
+                      <div className="sm:col-span-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="text-sm text-neutral-600 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border file:border-neutral-200 file:text-xs file:font-semibold file:bg-neutral-50 file:text-neutral-700 hover:file:bg-neutral-100 file:cursor-pointer cursor-pointer"
+                        />
+                        <p className="text-xs text-neutral-400 mt-1">2:1 Aspect Ratio</p>
                       </div>
                     </div>
 
@@ -573,6 +684,49 @@ export default function EditEventPage({
           </div>
         </div>
       </div>
+
+      {/* POP-UP FEEDBACK MODAL (SUKSES / ERROR) */}
+      {modalFeedback.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-neutral-100 text-center space-y-4">
+            <div className={`w-14 h-14 rounded-full mx-auto flex items-center justify-center ${
+              modalFeedback.type === "SUCCESS" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+            }`}>
+              {modalFeedback.type === "SUCCESS" ? (
+                <CheckCircleIcon className="w-8 h-8" />
+              ) : (
+                <ExclamationTriangleIcon className="w-8 h-8" />
+              )}
+            </div>
+
+            <div>
+              <h3 className="text-lg font-bold text-neutral-900">
+                {modalFeedback.type === "SUCCESS" ? "Berhasil Diperbarui!" : "Pemberitahuan"}
+              </h3>
+              <p className="text-xs md:text-sm text-neutral-600 mt-1">
+                {modalFeedback.message}
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setModalFeedback({ ...modalFeedback, isOpen: false });
+                  if (modalFeedback.type === "SUCCESS") {
+                    router.push("/organizer/dashboard/events");
+                  }
+                }}
+                className={`w-full py-2.5 rounded-full text-sm font-semibold text-white transition-all cursor-pointer shadow-xs ${
+                  modalFeedback.type === "SUCCESS" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-neutral-800 hover:bg-neutral-900"
+                }`}
+              >
+                {modalFeedback.type === "SUCCESS" ? "Kembali ke Events" : "Tutup"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

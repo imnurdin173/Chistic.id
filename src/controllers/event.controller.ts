@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { createEventSchema } from "@/middlewares/event.middleware";
+import { statusCodes } from "better-auth";
 
 export function calculateEventStatus(startDate: Date, endDate: Date){
     const now = new Date()
@@ -79,9 +81,10 @@ export async function createEventController(inputData: unknown) {
                 data: {
                     eventId: event.id,
                     name: tier.name,
-                    price: tier.price,
-                    finalPrice: tier.finalPrice,
+                    price: tier.price.toString(),
+                    finalPrice: tier.finalPrice.toString(),
                     quota: tier.quota,
+                    isPresale: isPresaleTier
                 },
             })
         }
@@ -91,8 +94,8 @@ export async function createEventController(inputData: unknown) {
                 data: {
                     eventId: event.id,
                     name: "Presale",
-                    price: 0,
-                    finalPrice: 0,
+                    price: "0",
+                    finalPrice: "0",
                     quota: presale.amount,
                     isPresale: true,
                     preSaleStart: presale.startDate ? new Date(presale.startDate): null,
@@ -179,7 +182,7 @@ export async function updateEventController(eventId: string, inputData: unknown)
     const {title, category, startDate, endDate, description, province, city, venueDetail, venueMaps, totalTicket, ticketTiers} = validation.data
 
     const existingEvent = await prisma.event.findUnique({
-        where: {id: eventId}
+        where: {id: eventId},
     })
 
     if(!existingEvent){
@@ -221,8 +224,8 @@ export async function updateEventController(eventId: string, inputData: unknown)
                 await tx.ticketTier.update({
                     where: {id: existingTier.id},
                     data: {
-                        price: tier.price,
-                        finalPrice: tier.finalPrice,
+                        price: tier.price.toString(),
+                        finalPrice: tier.finalPrice.toString(),
                         quota: tier.quota
                     }
                 })

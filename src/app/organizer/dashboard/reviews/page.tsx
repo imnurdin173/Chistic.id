@@ -6,8 +6,8 @@ import ReviewSummaryCard from "@/components/dashboard/reviews/ReviewSummaryCard"
 import ReviewFilters from "@/components/dashboard/reviews/ReviewFilters";
 import ReviewCard from "@/components/dashboard/reviews/ReviewCard";
 import { ReviewItem } from "@/types/review";
-import NavbarNotLoggedIn from "@/components/menubar/navbar";
 import Footer from "@/components/menubar/footer";
+import NavbarOrganizer from "@/components/menubar/navbarOrganizer";
 
 const INITIAL_REVIEWS: ReviewItem[] = [
   {
@@ -156,7 +156,7 @@ export default function ReviewsPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 font-sans flex-col justify-between">
-      <NavbarNotLoggedIn />
+      <NavbarOrganizer />
       <div className="flex-1 w-full p-4 md:p-8">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
         

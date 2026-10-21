@@ -9,6 +9,7 @@ import { MagnifyingGlassIcon, PlusIcon, PencilSquareIcon, TrashIcon } from "@her
 import { tr } from "zod/locales";
 import Footer from "@/components/menubar/footer";
 import NavbarNotLoggedIn from "@/components/menubar/navbar";
+import NavbarOrganizer from "@/components/menubar/navbarOrganizer";
 
 const INITIAL_VOUCHERS: VoucherItem[] = [
   {
@@ -64,7 +65,7 @@ export default function VouchersPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 font-sans flex flex-col justify-between">
-      <NavbarNotLoggedIn />
+      <NavbarOrganizer />
       <div className="flex-1 w-full p-4 md:p-8">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
         <Sidebar />
