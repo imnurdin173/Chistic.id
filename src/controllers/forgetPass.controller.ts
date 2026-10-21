@@ -1,57 +1,79 @@
 import nodemailer from "nodemailer";
 
-// Inisialisasi Transporter SMTP
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: false, 
+const port = Number(process.env.SMTP_PORT) || 465;
+
+// Dibuat SEKALI (bukan di setiap pengiriman) agar koneksi dipakai ulang.
+// Diekspor agar bisa dipakai route uji /api/debug/smtp.
+export const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST, // contoh: smtp.gmail.com
+  port,
+  // secure hanya true untuk port 465. Port 587 memakai STARTTLS (secure: false).
+  secure: port === 465,
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_APP_PASSWORD,
   },
 });
 
-interface SendResetEmailParams {
-  user: {
-    email: string;
-    name?: string | null;
-  };
-  url: string;
-}
+// Variabel env yang wajib ada. Mengembalikan daftar yang KOSONG.
+export const missingSmtpEnv = () =>
+  ["SMTP_HOST", "EMAIL_USER", "EMAIL_APP_PASSWORD"].filter((key) => !process.env[key]);
+
+// Nama pengguna berasal dari input pengguna -> di-escape agar tidak menyisipkan HTML ke email
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 
 export const sendResetPasswordEmail = async ({
   user,
   url,
-}: SendResetEmailParams) => {
-  const mailOptions = {
-    from: process.env.SMTP_FROM || '"Chistix Support" <no-reply@chistix.com>',
-    to: user.email,
-    subject: "Reset Password - Chistix",
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff;">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <h1 style="color: #f89c1e; font-size: 28px; font-weight: 900; margin: 0; tracking-tight: -0.05em;">CHISTIX</h1>
+}: {
+  user: { email: string; name?: string | null };
+  url: string;
+}) => {
+  // LOG 1: jika baris ini TIDAK muncul di terminal, Better Auth tidak memanggil fungsi ini
+  // (artinya user tidak ditemukan di database), bukan masalah SMTP.
+  console.log(`[reset-email] sendResetPassword dipanggil untuk ${user.email}`);
+
+  const missing = missingSmtpEnv();
+  if (missing.length > 0) {
+    console.error(`[reset-email] GAGAL: variabel env belum terisi: ${missing.join(", ")}`);
+    return;
+  }
+
+  const name = escapeHtml(user.name || "User");
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"Chistix Support" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Reset Kata Sandi Anda - Chistix",
+      text: `Halo ${user.name || "User"},\n\nBuka tautan berikut untuk membuat kata sandi baru (berlaku 1 jam):\n${url}\n\nJika Anda tidak meminta ini, abaikan email ini.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Halo ${name},</h2>
+          <p>Anda menerima email ini karena ada permintaan reset kata sandi untuk akun Anda.</p>
+          <p>Klik tombol di bawah ini untuk membuat kata sandi baru. Tautan berlaku selama <strong>1 jam</strong>.</p>
+          <a href="${url}" style="display: inline-block; padding: 10px 20px; color: white; background-color: #f89c1e; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Kata Sandi</a>
+          <p style="margin-top: 20px; font-size: 12px; color: gray;">
+            Jika tombol tidak berfungsi, salin dan tempel tautan ini ke browser Anda: <br/> ${url}
+          </p>
+          <p>Jika Anda tidak meminta ini, abaikan saja email ini.</p>
         </div>
-        
-        <h2 style="color: #111827; font-size: 18px; font-weight: 700; margin-bottom: 12px;">
-          Reset Password Confirmation
-        </h2>
-        
-        <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
-          Halo <strong>${user.name || "Chistix"}</strong>,<br/>
-          Please press this button to Reset your password:
-        </p>
+      `,
+    });
 
-        <div style="text-align: center; margin: 28px 0;">
-          <a href="${url}" 
-             style="background-color: #f89c1e; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 50px; font-weight: 700; font-size: 14px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(248, 156, 30, 0.3);">
-            Reset Password
-          </a>
-        </div>
-
-      </div>
-    `,
-  };
-
-  return await transporter.sendMail(mailOptions);
+    // LOG 2: bukti server SMTP menerima email. "accepted" berisi alamat tujuan.
+    console.log("[reset-email] TERKIRIM", {
+      accepted: info.accepted,
+      rejected: info.rejected,
+      response: info.response,
+    });
+  } catch (error) {
+    // LOG 3: penyebab kegagalan SMTP yang sebelumnya tersembunyi
+    console.error("[reset-email] GAGAL mengirim email:", error);
+  }
 };

@@ -1,3 +1,5 @@
+"use client"
+
 import TopBar from "./topBar";
 import NavbarNotLoggedIn from "./navbarNotLoggedIn";
 import NavbarOrganizer from "./navbarOrganizer";
