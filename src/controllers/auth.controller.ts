@@ -1,56 +1,51 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { sendVerificationEmailLink } from "./email.controller";
 import { sendResetPasswordEmail } from "./forgetPass.controller";
-const prisma = new PrismaClient();
 
 export const auth = betterAuth({
+  // Harus sama dengan alamat yang dibuka di browser (localhost:3000 / https://chistix.id)
+  baseURL:
+    process.env.BETTER_AUTH_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    "http://localhost:3000",
+
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+
   user: {
     additionalFields: {
-      role: {
-        type: "string",
-        required: false,
-        defaultValue: "customer"
-      },
-      points: {
-        type: "number",
-        required: false,
-        defaultValue: 1
-      }
+      role: { type: "string", required: false, defaultValue: "customer" },
+      points: { type: "number", required: false, defaultValue: 1 },
     },
   },
+
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    sendPasswordResetEmail: async ({
-      user,
-      url,
-    }: {
-      user: { email: string; name?: string | null };
-      url: string;
-    }) => {
+    minPasswordLength: 8,
+    maxPasswordLength: 64,
+
+    // Tautan reset berlaku 1 jam (satuan detik)
+    resetPasswordTokenExpiresIn: 60 * 60,
+    // Setelah password diganti, semua perangkat otomatis logout
+    revokeSessionsOnPasswordReset: true,
+
+    // PERBAIKAN: nama opsinya `sendResetPassword` (bukan `sendPasswordResetEmail`).
+    // Tanpa opsi ini Better Auth menganggap fitur reset password tidak aktif.
+    sendResetPassword: async ({ user, url }) => {
       await sendResetPasswordEmail({ user, url });
     },
   },
 
   emailVerification: {
-    requireEmailVerification: true,
     sendOnSignUp: true,
-    async sendVerificationEmail({ user, url }) {
-
-      try {
-        await sendVerificationEmailLink(user.email, user.name || "User", url);
-      } catch (error) {
-        console.error("--> [BETTER-AUTH] ERROR SAAT MENGIRIM EMAIL:", error);
-      }
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendVerificationEmailLink(user.email, user.name || "User", url);
     },
-    
   },
-
 
   socialProviders: {
     google: {
@@ -59,6 +54,70 @@ export const auth = betterAuth({
     },
   },
 });
+
+// import { betterAuth } from "better-auth";
+// import { prismaAdapter } from "better-auth/adapters/prisma";
+// import { PrismaClient } from "@prisma/client";
+// import { sendVerificationEmailLink } from "./email.controller";
+// import { sendResetPasswordEmail } from "./forgetPass.controller";
+// const prisma = new PrismaClient();
+
+// export const auth = betterAuth({
+//   database: prismaAdapter(prisma, {
+//     provider: "postgresql",
+//   }),
+//   user: {
+//     additionalFields: {
+//       role: {
+//         type: "string",
+//         required: false,
+//         defaultValue: "customer"
+//       },
+//       points: {
+//         type: "number",
+//         required: false,
+//         defaultValue: 1
+//       }
+//     },
+//   },
+//   emailAndPassword: {
+//     enabled: true,
+//     requireEmailVerification: true,
+//     sendPasswordResetEmail: async ({
+//       user,
+//       url,
+//     }: {
+//       user: { email: string; name?: string | null };
+//       url: string;
+//     }) => {
+//       await sendResetPasswordEmail({ user, url });
+//     },
+//   },
+
+//   emailVerification: {
+//     requireEmailVerification: true,
+//     sendOnSignUp: true,
+//     async sendVerificationEmail({ user, url }) {
+
+//       try {
+//         await sendVerificationEmailLink(user.email, user.name || "User", url);
+//       } catch (error) {
+//         console.error("--> [BETTER-AUTH] ERROR SAAT MENGIRIM EMAIL:", error);
+//       }
+//     },
+    
+//   },
+
+
+//   socialProviders: {
+//     google: {
+//       clientId: process.env.GOOGLE_CLIENT_ID as string,
+//       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+//     },
+//   },
+// });
+
+
 
 // export const auth = betterAuth({
 //   database: prismaAdapter(prisma, {
