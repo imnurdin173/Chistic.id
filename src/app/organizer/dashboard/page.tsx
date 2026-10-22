@@ -10,8 +10,8 @@ import {
 } from "@heroicons/react/24/outline";
 import {BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid} from "recharts"
 import Footer from "@/components/menubar/footer";
-import NavbarNotLoggedIn from "@/components/menubar/navbar";
 import Link from "next/link";
+import NavbarOrganizer from "@/components/menubar/navbarOrganizer";
 
 export default function OrganizerOverviewPage() {
   const [selectedEventFilter, setSelectedEventFilter] = useState("All event");
@@ -126,7 +126,8 @@ export default function OrganizerOverviewPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 font-sans flex flex-col justify-between">
-      <NavbarNotLoggedIn />
+      <NavbarOrganizer
+      />
       <div className="flex-1 w-full p-4 md:p-8">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
         

@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar/SidebarDashboard";
 import { ChevronRightIcon, HomeIcon } from "@heroicons/react/24/outline";
+import NavbarOrganizer from "@/components/menubar/navbarOrganizer";
+import Footer from "@/components/menubar/footer";
 
 export default function CreateVoucherPage() {
   const router = useRouter();
@@ -31,7 +33,9 @@ export default function CreateVoucherPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf8f4] text-neutral-800 p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-[#faf8f4] text-neutral-800 font-sans flex flex-col justify-between">
+      <NavbarOrganizer />
+      <div className="flex-1 w-full p-4 md:p-8">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
         <Sidebar />
 
@@ -156,6 +160,8 @@ export default function CreateVoucherPage() {
           </div>
         </div>
       </div>
+      </div>
+      <Footer />
     </div>
   );
 }

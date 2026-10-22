@@ -9,7 +9,7 @@ import Pagination from "@/components/dashboard/transactions/Pagination";
 import { TransactionItem } from "@/types/transaction";
 import Footer from "@/components/menubar/footer";
 import ViewAction from "@/components/dashboard/transactions/ViewAction";
-import NavbarNotLoggedIn from "@/components/menubar/navbar";
+import NavbarOrganizer from "@/components/menubar/navbarOrganizer";
 
 const DUMMY_TRANSACTIONS: TransactionItem[] = [
   {
@@ -151,7 +151,7 @@ export default function TransactionsPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 font-sans flex flex-col justify-between">
-      <NavbarNotLoggedIn />
+      <NavbarOrganizer />
     <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 p-4 md:p-8 font-sans">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start">
         <Sidebar />

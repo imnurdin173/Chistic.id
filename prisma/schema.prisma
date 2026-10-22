@@ -163,6 +163,10 @@ model Event {
   transactions Transaction[]
   reviewRating      Review[]
 
+  isPresale    Boolean   @default(false)
+  isVip Boolean @default(false)
+  isRegular Boolean @default(false)
+
   @@map("events")
 }
 
