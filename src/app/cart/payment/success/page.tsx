@@ -1,199 +1,131 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import React, { Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { DUMMY_EVENTS } from "@/data/events";
 
-export default function CartSuccessPage() {
+function formatEventDate(dateString?: string) {
+  if (!dateString) return "15 November 2026 • 16:00";
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return dateString;
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d).replace(".", ":");
+}
+
+function PaymentSuccessContent() {
   const router = useRouter();
-  const [isDownloading, setIsDownloading] = useState(false);
+  const searchParams = useSearchParams();
 
-  const handleDownloadPDF = async () => {
-    const ticketElement = document.getElementById("e-ticket-card");
+  const eventIdParam = searchParams.get("eventId");
+  const amountParam = searchParams.get("amount");
+  const qtyParam = searchParams.get("qty");
+  const variantParam = searchParams.get("variant");
+  const customerParam = searchParams.get("customer") || "mutiara";
 
-    if (!ticketElement) {
-      console.error("Elemen E-Ticket tidak ditemukan");
-      return;
-    }
+  const selectedEvent =
+    DUMMY_EVENTS.find((e) => e.id.toString() === eventIdParam) || DUMMY_EVENTS[0];
 
-    try {
-      setIsDownloading(true);
+  const totalAmount = amountParam ? parseInt(amountParam, 10) : selectedEvent.price;
+  const ticketQty = qtyParam ? parseInt(qtyParam, 10) : 1;
+  const ticketVariant = variantParam || "Presale";
 
-      // Tangkap elemen dengan menunggu gambar selesai (imageTimeout)
-      const canvas = await html2canvas(ticketElement, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        imageTimeout: 15000, // Menunggu gambar QR code selesai dimuat (15 detik)
-        onclone: (clonedDoc) => {
-          const allElements = clonedDoc.querySelectorAll("*");
-          allElements.forEach((el) => {
-            const htmlEl = el as HTMLElement;
-            const computedStyle = window.getComputedStyle(htmlEl);
-
-            if (computedStyle.color.includes("lab") || computedStyle.color.includes("oklch")) {
-              htmlEl.style.color = "#1e293b";
-            }
-            if (computedStyle.backgroundColor.includes("lab") || computedStyle.backgroundColor.includes("oklch")) {
-              htmlEl.style.backgroundColor = "#ffffff";
-            }
-            if (computedStyle.borderColor.includes("lab") || computedStyle.borderColor.includes("oklch")) {
-              htmlEl.style.borderColor = "#e2e8f0";
-            }
-          });
-        },
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-
-      // Inisialisasi jsPDF ukuran A4
-      const pdf = new jsPDF("portrait", "mm", "a4");
-      const pageWidth = pdf.internal.pageSize.getWidth(); // Lebar A4 (~210mm)
-      const pageHeight = pdf.internal.pageSize.getHeight(); // Tinggi A4 (~297mm)
-
-      // Hitung ukuran proporsional tiket agar pas di tengah halaman A4
-      const imgWidth = 140; // Lebar cetak tiket dalam mm (pas di tengah A4)
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      // Posisikan tiket di tengah secara horizontal (X) dan vertikal (Y)
-      const xPos = (pageWidth - imgWidth) / 2;
-      const yPos = (pageHeight - imgHeight) / 2;
-
-      pdf.addImage(imgData, "PNG", xPos, yPos > 10 ? yPos : 10, imgWidth, imgHeight);
-      pdf.save("Chistix_E-Ticket.pdf");
-    } catch (error) {
-      console.error("Gagal mengunduh PDF:", error);
-    } finally {
-      setIsDownloading(false);
-    }
-  };
+  const formatRupiah = (num: number) => "Rp " + num.toLocaleString("id-ID");
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: "#f8fafc" }}>
-      <div className="w-full max-w-md space-y-4">
-        
-        {/* AREA KARTU TIKET */}
-        <div
-          id="e-ticket-card"
-          className="rounded-3xl p-6 border shadow-sm space-y-6 bg-white"
-          style={{
-            backgroundColor: "#ffffff",
-            borderColor: "#e2e8f0",
-            color: "#1e293b",
-          }}
+    <div className="min-h-screen bg-slate-100 py-10 px-4 flex flex-col items-center justify-center font-sans">
+      <div className="w-full max-w-md bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200">
+        <div className="flex justify-center mb-3">
+          <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center">
+            <svg
+              className="w-8 h-8 text-white stroke-current"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="3"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+        </div>
+
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-slate-900">Pembayaran Berhasil!</h1>
+          <p className="text-xs text-amber-600 font-medium mt-1">
+            Pesananmu sedang dikonfirmasi oleh organizer (maks. 2 jam).
+          </p>
+        </div>
+
+        <div className="space-y-3 text-xs font-medium border-t border-slate-100 pt-4 mb-2">
+          <div className="flex justify-between items-start">
+            <span className="text-slate-400">Events</span>
+            <span className="font-bold text-right text-slate-900 max-w-[200px]">
+              {selectedEvent.title}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-400">Customer</span>
+            <span className="font-bold text-slate-900">{customerParam}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-400">Ticket Type</span>
+            <span className="font-bold text-slate-900">
+              {ticketVariant} ({ticketQty}x Ticket)
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-400">Date & Time</span>
+            <span className="font-bold text-slate-900">
+              {formatEventDate(selectedEvent.date)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-400">Location</span>
+            <span className="font-bold text-slate-900">
+              {selectedEvent.location || "Jakarta, Indonesia"}
+            </span>
+          </div>
+          <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+            <span className="text-slate-400">Total Amount</span>
+            <span className="font-bold text-emerald-600 text-sm">
+              {formatRupiah(totalAmount)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full max-w-md mt-4 space-y-2">
+        <button
+          onClick={() => router.push("/customer/dashboard?tab=transactions")}
+          className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-2xl transition cursor-pointer shadow-xs text-center block"
         >
-          {/* Status Pembayaran */}
-          <div className="text-center space-y-2">
-            <div 
-              className="w-14 h-14 rounded-full flex items-center justify-center mx-auto text-white text-2xl font-bold shadow-sm"
-              style={{ backgroundColor: "#10B981" }}
-            >
-              ✓
-            </div>
-            <h1 className="text-xl font-bold" style={{ color: "#0f172a" }}>
-              Payment Successful!
-            </h1>
-            <p className="text-xs" style={{ color: "#94a3b8" }}>
-              Valid ticket. Guest may enter.
-            </p>
-          </div>
+          Cek Status Transaksi
+        </button>
 
-          {/* Rincian Transaksi */}
-          <div 
-            className="space-y-3 text-xs pt-4" 
-            style={{ borderTop: "1px solid #f1f5f9" }}
-          >
-            <div className="flex justify-between items-center">
-              <span style={{ color: "#94a3b8" }}>Events</span>
-              <span className="font-bold text-right" style={{ color: "#0f172a" }}>
-                Indie Music Summit & Showcase
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span style={{ color: "#94a3b8" }}>Customer</span>
-              <span className="font-bold" style={{ color: "#0f172a" }}>
-                mutiara
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span style={{ color: "#94a3b8" }}>Ticket Type</span>
-              <span className="font-bold" style={{ color: "#0f172a" }}>
-                Presale (3x Ticket)
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span style={{ color: "#94a3b8" }}>Date & Time</span>
-              <span className="font-bold" style={{ color: "#0f172a" }}>
-                2026-11-15T16:00:00
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span style={{ color: "#94a3b8" }}>Location</span>
-              <span className="font-bold" style={{ color: "#0f172a" }}>
-                Bandung, West Java
-              </span>
-            </div>
-
-            <div 
-              className="flex justify-between items-center pt-2" 
-              style={{ borderTop: "1px solid #f1f5f9" }}
-            >
-              <span style={{ color: "#94a3b8" }}>Total Amount</span>
-              <span className="font-bold text-sm" style={{ color: "#059669" }}>
-                Rp 216.450
-              </span>
-            </div>
-          </div>
-
-          {/* Area QR Code */}
-          <div 
-            className="p-6 rounded-2xl border text-center space-y-3"
-            style={{ backgroundColor: "#f8fafc", borderColor: "#f1f5f9" }}
-          >
-            <div 
-              className="p-3 rounded-xl inline-block border"
-              style={{ backgroundColor: "#ffffff", borderColor: "#e2e8f0" }}
-            >
-              <img
-                src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Chistix-Ticket-Mutiara"
-                alt="QR Code Ticket"
-                className="w-36 h-36 mx-auto object-contain"
-                crossOrigin="anonymous"
-              />
-            </div>
-            <p className="text-[11px]" style={{ color: "#94a3b8" }}>
-              Tunjukkan QR Code ini di pintu masuk acara
-            </p>
-          </div>
-        </div>
-
-        {/* tombol aksi */}
-        <div className="space-y-2 pt-1">
-          <button
-            type="button"
-            onClick={handleDownloadPDF}
-            disabled={isDownloading}
-            className="w-full py-3 bg-[#FF8A00] hover:bg-[#E07B00] disabled:bg-amber-300 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer shadow-xs text-center"
-          >
-            {isDownloading ? "Mengunduh PDF..." : "Download E-Ticket (PDF)"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-colors cursor-pointer text-center"
-          >
-            Kembali ke Beranda
-          </button>
-        </div>
-
+        <button
+          onClick={() => router.push("/")}
+          className="w-full py-3.5 bg-slate-200/70 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition cursor-pointer text-center block"
+        >
+          Kembali ke Beranda
+        </button>
       </div>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center text-xs text-slate-400">
+          Loading...
+        </div>
+      }
+    >
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { Coins, Info } from "lucide-react";
 import CartItemTable from "@/components/cart/CartItemTable";
 import VoucherSection from "@/components/cart/VoucherSection";
 import OrderSummary from "@/components/cart/OrderSummary";
@@ -40,8 +41,10 @@ function CartContent() {
     return "Presale";
   });
 
-  // 5. State Diskon Voucher
-  const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
+  // 5. State Terpisah: Coupon Discount & Point Balance
+  const [couponDiscount, setCouponDiscount] = useState<number>(5000); // Default potongan kupon otomatis (< 5000)
+  const [pointBalance] = useState<number>(150);
+  const [isPointsClaimed, setIsPointsClaimed] = useState<boolean>(false);
 
   // Sync state dengan URL Query Parameter saat URL berubah
   useEffect(() => {
@@ -56,47 +59,44 @@ function CartContent() {
   const getPriceByVariant = (variantName: string, baseEventPrice: number) => {
     switch (variantName) {
       case "VIP":
-        return baseEventPrice * 2; // VIP 2x lipat dari harga dasar
+        return baseEventPrice * 2;
       case "Presale":
       case "Regular":
       default:
-        return baseEventPrice; // Presale & Regular sama dengan harga dasar
+        return baseEventPrice;
     }
   };
 
   const basePricePerTicket = getPriceByVariant(ticketVariant, selectedEvent.price);
   const rawSubtotal = basePricePerTicket * ticketQty;
   const taxFee = Math.round(rawSubtotal * 0.11); // PPN 11%
-  const totalAmount = Math.max(0, rawSubtotal - appliedDiscount + taxFee);
+
+  // Nilai potongan poin (hanya aktif jika di-toggle)
+  const pointDiscountValue = isPointsClaimed ? pointBalance : 0;
+  
+  // Total Diskon (Kupon + Poin)
+  const totalDiscount = couponDiscount + pointDiscountValue;
+
+  // Total Akhir
+  const subtotalAfterDiscount = Math.max(0, rawSubtotal - totalDiscount);
+  const totalAmount = Math.max(0, subtotalAfterDiscount + taxFee);
 
   const handleApplyVoucher = (code: string) => {
     if (code.toUpperCase() === "DISCOUNT50" || code.toUpperCase() === "CHISTIX50K") {
-      setAppliedDiscount(50000);
-      alert("Voucher berhasil dipasang! Potongan Rp 50.000");
-    } else if (code.trim() !== "") {
-      alert("Kode voucher tidak valid.");
+      setCouponDiscount(50000);
+    } else {
+      setCouponDiscount(5000);
     }
   };
 
   return (
     <div className="w-full max-w-xl bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8 space-y-6">
+      
       {/* Header Cart */}
       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
         <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
           <span>🛒</span> Event Cart
         </h1>
-        <button
-          onClick={() => {
-            setTicketQty(1);
-            if (typeof window !== "undefined") {
-              sessionStorage.removeItem("chistix_ticket_qty");
-              sessionStorage.removeItem("chistix_ticket_variant");
-            }
-          }}
-          className="text-xs font-medium text-slate-400 hover:text-red-500 transition cursor-pointer"
-        >
-          Clear Cart
-        </button>
       </div>
 
       {/* 1. Event Ticket Section */}
@@ -116,23 +116,69 @@ function CartContent() {
         />
       </section>
 
-      {/* 2. Voucher Discount Section */}
+      {/* 2. Voucher Discount Section (Tulisan "Discount Coupon" ganda sudah dihapus) */}
       <section className="bg-slate-50 p-4 rounded-xl border border-slate-100">
         <VoucherSection onApplyVoucher={handleApplyVoucher} />
       </section>
 
-      {/* 3. Order Summary Section (Propping ticketQty secara presisi) */}
+      {/* 3. Point Balance Section */}
+      <section className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+            <Coins className="w-4 h-4 text-amber-500" /> Point Balance
+          </div>
+          <div className="flex items-center gap-1 text-[11px] text-slate-400">
+            <Info className="w-3.5 h-3.5" />
+            <span>Use points to get extra discounts</span>
+          </div>
+        </div>
+
+        {/* Garis Pemisah (Divider) */}
+        <hr className="border-slate-200 my-2" />
+        
+        {/* Informasi Poin & Switch Toggle */}
+        <div className="flex items-center justify-between py-1">
+          <p className="text-xs text-slate-600 font-medium">
+            You have <span className="font-bold text-amber-600">{pointBalance} Coins</span>
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setIsPointsClaimed(!isPointsClaimed)}
+            disabled={pointBalance === 0}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              pointBalance === 0
+                ? "bg-slate-200 cursor-not-allowed"
+                : isPointsClaimed
+                ? "bg-emerald-500"
+                : "bg-slate-300"
+            }`}
+            role="switch"
+            aria-checked={isPointsClaimed}
+          >
+            <span className="sr-only">Claim Points</span>
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                isPointsClaimed ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+      </section>
+
+      {/* 4. Order Summary Section */}
       <section className="bg-slate-50 p-4 rounded-xl border border-slate-100">
         <OrderSummary
           ticketQty={ticketQty}
           subtotal={rawSubtotal}
-          discount={appliedDiscount}
+          couponDiscount={couponDiscount}
+          pointDiscount={pointDiscountValue}
           taxFee={taxFee}
           totalAmount={totalAmount}
         />
       </section>
 
-      {/* 4. Payment Method & Checkout */}
+      {/* 5. Payment Method & Checkout */}
       <section className="pt-2">
         <PaymentMethod totalAmount={totalAmount} quantity={ticketQty} />
       </section>

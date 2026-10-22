@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface PaymentMethodProps {
@@ -8,9 +8,18 @@ interface PaymentMethodProps {
   quantity?: number;
 }
 
-export default function PaymentMethod({ totalAmount, quantity = 1 }: PaymentMethodProps) {
+function PaymentMethodContent({ totalAmount, quantity = 1 }: PaymentMethodProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // State default memilih DANA
+  const [selectedMethod, setSelectedMethod] = useState<string>("DANA");
+
+  const methods = [
+    { id: "DANA", label: "DANA", route: "/cart/payment/ewallet/dana", textColor: "text-blue-600" },
+    { id: "QRIS", label: "QRIS", route: "/cart/payment", textColor: "text-slate-800" }, // Mengarah langsung ke /cart/payment
+    { id: "ShopeePay", label: "ShopeePay", route: "/cart/payment/ewallet/shopeepay", textColor: "text-orange-600" },
+  ];
 
   const handleCheckout = () => {
     const eventId = searchParams.get("eventId") || "1";
@@ -21,8 +30,13 @@ export default function PaymentMethod({ totalAmount, quantity = 1 }: PaymentMeth
       sessionStorage.setItem("chistix_ticket_qty", quantity.toString());
     }
 
+    const currentMethodObj = methods.find((m) => m.id === selectedMethod);
+    const targetRoute = currentMethodObj ? currentMethodObj.route : "/cart/payment/ewallet/dana";
+
     router.push(
-      `/cart/payment?eventId=${eventId}&amount=${totalAmount}&qty=${quantity}&variant=${encodeURIComponent(variant)}`
+      `${targetRoute}?eventId=${eventId}&amount=${totalAmount}&qty=${quantity}&variant=${encodeURIComponent(
+        variant
+      )}`
     );
   };
 
@@ -32,22 +46,28 @@ export default function PaymentMethod({ totalAmount, quantity = 1 }: PaymentMeth
         <span>💳</span> PAYMENT METHOD
       </h2>
 
+      {/* Choice Buttons */}
       <div className="flex items-center justify-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
-        <span className="px-3 py-1 bg-white rounded border border-slate-200 text-xs font-bold text-blue-600 shadow-2xs">
-          DANA
-        </span>
-        <span className="px-3 py-1 bg-white rounded border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs">
-          QRIS
-        </span>
-        <span className="px-3 py-1 bg-white rounded border border-slate-200 text-xs font-bold text-orange-600 shadow-2xs">
-          ShopeePay
-        </span>
-        <span className="px-3 py-1 bg-white rounded border border-slate-200 text-xs font-bold text-sky-600 shadow-2xs">
-          midtrans
-        </span>
+        {methods.map((m) => {
+          const isSelected = selectedMethod === m.id;
+          return (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setSelectedMethod(m.id)}
+              className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-2xs cursor-pointer ${
+                isSelected
+                  ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-400/20"
+                  : "border-slate-200 bg-white hover:border-slate-300"
+              } ${m.textColor}`}
+            >
+              {m.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Posisikan tombol di tengah (center) */}
+      {/* Check Out Button */}
       <div className="flex justify-center pt-1">
         <button
           type="button"
@@ -59,5 +79,13 @@ export default function PaymentMethod({ totalAmount, quantity = 1 }: PaymentMeth
         </button>
       </div>
     </div>
+  );
+}
+
+export default function PaymentMethod(props: PaymentMethodProps) {
+  return (
+    <Suspense fallback={<div className="text-xs text-slate-400 text-center py-2">Loading payment method...</div>}>
+      <PaymentMethodContent {...props} />
+    </Suspense>
   );
 }
