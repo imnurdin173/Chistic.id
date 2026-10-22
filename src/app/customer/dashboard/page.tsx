@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import OverviewTab from "@/components/customer/dashboard/OverviewTab";
 import EventsTab from "@/components/customer/dashboard/EventsTab";
 import TransactionsTab from "@/components/customer/dashboard/TransactionsTab";
@@ -41,9 +42,22 @@ export interface ReviewItem {
   imageUrl: string;
 }
 
-export default function CustomerDashboardPage() {
+function DashboardContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab") as TabType | null;
+
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [userPoints, setUserPoints] = useState<number>(0);
+
+  // Efek untuk membaca query parameter ?tab=... dari URL
+  useEffect(() => {
+    if (
+      tabParam &&
+      ["overview", "events", "transactions", "checkin", "reviews"].includes(tabParam)
+    ) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   // 1. State Transaksi (Sumber utama data)
   const [transactions, setTransactions] = useState<TransactionItem[]>([
@@ -107,50 +121,57 @@ export default function CustomerDashboardPage() {
     },
   ]);
 
-  // Hitung jumlah upcoming/registered tickets dari transaksi yang berstatus "Waiting Payment" / "Done" (yang aktif)
+  // Hitung jumlah upcoming/registered tickets dari transaksi yang berstatus "Waiting Payment" / "Done"
   const upcomingTicketsCount = transactions.filter(
     (t) => t.status === "Waiting Payment" || t.status === "Done"
   ).length;
 
   return (
+    <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start mt-6">
+      <CustomerSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      <main className="flex-1 w-full max-w-3xl bg-white rounded-2xl p-6 md:p-8 shadow-xs border border-neutral-100">
+        {activeTab === "overview" && (
+          <OverviewTab
+            setActiveTab={setActiveTab}
+            points={userPoints}
+            attendedEvents={attendedEvents}
+            upcomingTicketsCount={upcomingTicketsCount}
+            transactions={transactions}
+          />
+        )}
+
+        {activeTab === "events" && <EventsTab />}
+        {activeTab === "transactions" && <TransactionsTab transactions={transactions} />}
+
+        {activeTab === "checkin" && (
+          <CheckInTab
+            setActiveTab={setActiveTab}
+            attendedEvents={attendedEvents}
+            transactions={transactions}
+          />
+        )}
+
+        {activeTab === "reviews" && (
+          <ReviewsTab
+            attendedEvents={attendedEvents}
+            setAttendedEvents={setAttendedEvents}
+            myReviews={myReviews}
+            setMyReviews={setMyReviews}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
+
+export default function CustomerDashboardPage() {
+  return (
     <div className="min-h-screen bg-[#FAF8F4] text-neutral-800 p-4 md:p-8 font-sans">
       <NavbarNotLoggedIn />
-
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-start mt-6">
-        <CustomerSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-
-        <main className="flex-1 w-full max-w-3xl bg-white rounded-2xl p-6 md:p-8 shadow-xs border border-neutral-100">
-          {activeTab === "overview" && (
-            <OverviewTab
-              setActiveTab={setActiveTab}
-              points={userPoints}
-              attendedEvents={attendedEvents}
-              upcomingTicketsCount={upcomingTicketsCount}
-              transactions={transactions}
-            />
-          )}
-
-          {activeTab === "events" && <EventsTab />}
-          {activeTab === "transactions" && <TransactionsTab transactions={transactions} />}
-          
-          {activeTab === "checkin" && (
-            <CheckInTab
-              setActiveTab={setActiveTab}
-              attendedEvents={attendedEvents}
-              transactions={transactions}
-            />
-          )}
-
-          {activeTab === "reviews" && (
-            <ReviewsTab
-              attendedEvents={attendedEvents}
-              setAttendedEvents={setAttendedEvents}
-              myReviews={myReviews}
-              setMyReviews={setMyReviews}
-            />
-          )}
-        </main>
-      </div>
+      <Suspense fallback={<div className="text-center py-10 text-xs text-neutral-400">Loading dashboard...</div>}>
+        <DashboardContent />
+      </Suspense>
     </div>
   );
 }

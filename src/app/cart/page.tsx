@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { Coins, Info } from "lucide-react";
 import CartItemTable from "@/components/cart/CartItemTable";
 import VoucherSection from "@/components/cart/VoucherSection";
 import OrderSummary from "@/components/cart/OrderSummary";
@@ -40,8 +41,8 @@ function CartContent() {
     return "Presale";
   });
 
-  // 5. State Diskon Voucher & Point Balance
-  const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
+  // 5. State Terpisah: Coupon Discount & Point Balance
+  const [couponDiscount, setCouponDiscount] = useState<number>(5000); // Default potongan kupon otomatis (< 5000)
   const [pointBalance] = useState<number>(150);
   const [isPointsClaimed, setIsPointsClaimed] = useState<boolean>(false);
 
@@ -70,16 +71,21 @@ function CartContent() {
   const rawSubtotal = basePricePerTicket * ticketQty;
   const taxFee = Math.round(rawSubtotal * 0.11); // PPN 11%
 
-  // Hitung total setelah voucher
-  const subtotalAfterVoucher = Math.max(0, rawSubtotal - appliedDiscount);
-  
-  // Nilai potongan poin (150 poin = potongan Rp 150)
+  // Nilai potongan poin (hanya aktif jika di-toggle)
   const pointDiscountValue = isPointsClaimed ? pointBalance : 0;
-  const totalAmount = Math.max(0, subtotalAfterVoucher + taxFee - pointDiscountValue);
+  
+  // Total Diskon (Kupon + Poin)
+  const totalDiscount = couponDiscount + pointDiscountValue;
+
+  // Total Akhir
+  const subtotalAfterDiscount = Math.max(0, rawSubtotal - totalDiscount);
+  const totalAmount = Math.max(0, subtotalAfterDiscount + taxFee);
 
   const handleApplyVoucher = (code: string) => {
     if (code.toUpperCase() === "DISCOUNT50" || code.toUpperCase() === "CHISTIX50K") {
-      setAppliedDiscount(50000);
+      setCouponDiscount(50000);
+    } else {
+      setCouponDiscount(5000);
     }
   };
 
@@ -110,43 +116,52 @@ function CartContent() {
         />
       </section>
 
-      {/* 2. Voucher Discount Section */}
+      {/* 2. Voucher Discount Section (Tulisan "Discount Coupon" ganda sudah dihapus) */}
       <section className="bg-slate-50 p-4 rounded-xl border border-slate-100">
         <VoucherSection onApplyVoucher={handleApplyVoucher} />
       </section>
 
-      {/* 3. Point Balance Section (Dengan Ceklis Hijau Lingkaran) */}
+      {/* 3. Point Balance Section */}
       <section className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
-        <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-          <span>⭐</span> Point Balance
-        </div>
-        <div className="flex gap-2">
-          {/* Kotak Putih Ber-border */}
-          <div className="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white flex items-center justify-between">
-            <span className="text-slate-500 font-medium">
-              Kamu punya <span className="font-bold text-amber-600">{pointBalance} Poin</span>
-            </span>
-            {isPointsClaimed && (
-              <span className="w-5 h-5 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-600 font-bold text-[10px]">
-                ✓
-              </span>
-            )}
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+            <Coins className="w-4 h-4 text-amber-500" /> Point Balance
           </div>
+          <div className="flex items-center gap-1 text-[11px] text-slate-400">
+            <Info className="w-3.5 h-3.5" />
+            <span>Use points to get extra discounts</span>
+          </div>
+        </div>
 
-          {/* Tombol Claim / Remove */}
+        {/* Garis Pemisah (Divider) */}
+        <hr className="border-slate-200 my-2" />
+        
+        {/* Informasi Poin & Switch Toggle */}
+        <div className="flex items-center justify-between py-1">
+          <p className="text-xs text-slate-600 font-medium">
+            You have <span className="font-bold text-amber-600">{pointBalance} Coins</span>
+          </p>
+
           <button
             type="button"
             onClick={() => setIsPointsClaimed(!isPointsClaimed)}
             disabled={pointBalance === 0}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer ${
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
               pointBalance === 0
-                ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                ? "bg-slate-200 cursor-not-allowed"
                 : isPointsClaimed
-                ? "bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-slate-200 hover:border-red-200"
-                : "bg-amber-500 hover:bg-amber-600 text-white"
+                ? "bg-emerald-500"
+                : "bg-slate-300"
             }`}
+            role="switch"
+            aria-checked={isPointsClaimed}
           >
-            {isPointsClaimed ? "Remove" : "Claim"}
+            <span className="sr-only">Claim Points</span>
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                isPointsClaimed ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
           </button>
         </div>
       </section>
@@ -156,7 +171,8 @@ function CartContent() {
         <OrderSummary
           ticketQty={ticketQty}
           subtotal={rawSubtotal}
-          discount={appliedDiscount + pointDiscountValue}
+          couponDiscount={couponDiscount}
+          pointDiscount={pointDiscountValue}
           taxFee={taxFee}
           totalAmount={totalAmount}
         />

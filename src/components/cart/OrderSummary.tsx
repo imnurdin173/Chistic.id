@@ -1,11 +1,10 @@
-"use client";
-
 import React from "react";
 
 interface OrderSummaryProps {
-  ticketQty: number; // Tambahkan prop ini
+  ticketQty: number;
   subtotal: number;
-  discount: number;
+  couponDiscount: number; // Potongan khusus kupon
+  pointDiscount: number;  // Potongan khusus poin
   taxFee: number;
   totalAmount: number;
 }
@@ -13,46 +12,66 @@ interface OrderSummaryProps {
 export default function OrderSummary({
   ticketQty,
   subtotal,
-  discount,
+  couponDiscount,
+  pointDiscount,
   taxFee,
   totalAmount,
 }: OrderSummaryProps) {
-  const formatRupiah = (num: number) => "Rp " + num.toLocaleString("id-ID");
+  // Format ke Rupiah
+  const formatRupiah = (number: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(number);
+  };
 
   return (
     <div className="space-y-3">
-      <h2 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wide">
-        <span>📑</span> ORDER SUMMARY
+      <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+        Order Summary
       </h2>
 
-      <div className="space-y-2 text-xs">
-        {/* Jumlah Tiket Dinamis */}
-        <div className="flex justify-between items-center text-slate-600">
+      <div className="space-y-2 text-xs text-slate-600">
+        <div className="flex justify-between">
           <span>Ticket Quantity</span>
-          <span className="font-bold text-slate-800">{ticketQty}x Ticket</span>
+          <span className="font-semibold text-slate-800">{ticketQty}x Ticket</span>
         </div>
 
-        <div className="flex justify-between items-center text-slate-600">
+        <div className="flex justify-between">
           <span>Cart Subtotal</span>
-          <span className="font-bold text-slate-800">{formatRupiah(subtotal)}</span>
+          <span className="font-semibold text-slate-800">{formatRupiah(subtotal)}</span>
         </div>
 
-        {discount > 0 && (
-          <div className="flex justify-between items-center text-emerald-600">
-            <span>Discount</span>
-            <span className="font-bold">-{formatRupiah(discount)}</span>
+        {/* Baris Kupon Diskon (Warna Merah) */}
+        {couponDiscount > 0 && (
+          <div className="flex justify-between text-red-500 font-medium">
+            <span>Coupon Discount</span>
+            <span>-{formatRupiah(couponDiscount)}</span>
           </div>
         )}
 
-        <div className="flex justify-between items-center text-slate-600">
-          <span>Tax Fee (11%)</span>
-          <span className="font-bold text-slate-800">{formatRupiah(taxFee)}</span>
-        </div>
+        {/* Baris Potongan Poin (Warna Merah, Hanya tampil jika poin diklaim) */}
+        {pointDiscount > 0 && (
+          <div className="flex justify-between text-red-500 font-medium">
+            <span>Point Discount</span>
+            <span>-{formatRupiah(pointDiscount)}</span>
+          </div>
+        )}
 
-        <div className="flex justify-between items-center pt-2 border-t border-slate-200/80 text-slate-800 font-extrabold text-sm">
-          <span>Total Amount</span>
-          <span className="text-[#FF8A00]">{formatRupiah(totalAmount)}</span>
+        <div className="flex justify-between">
+          <span>Tax Fee (11%)</span>
+          <span className="font-semibold text-slate-800">{formatRupiah(taxFee)}</span>
         </div>
+      </div>
+
+      <hr className="border-slate-200 my-2" />
+
+      <div className="flex justify-between items-center text-sm">
+        <span className="font-bold text-slate-800">Total Amount</span>
+        <span className="font-bold text-amber-600 text-base">
+          {formatRupiah(totalAmount)}
+        </span>
       </div>
     </div>
   );
