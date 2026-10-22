@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Search, Printer, Calendar, MapPin, Ticket, Clock } from "lucide-react";
+import { Search, Clock } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -144,61 +144,49 @@ export default function EventsTab() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-neutral-100 bg-white shadow-xs">
-        <table className="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr className="border-b border-neutral-100 bg-neutral-50/50 text-neutral-500 font-semibold uppercase tracking-wider">
-              <th className="py-3.5 px-4">Event Name</th>
-              <th className="py-3.5 px-4">Ticket Type</th>
-              <th className="py-3.5 px-4 text-center">Jumlah</th>
-              <th className="py-3.5 px-4">Date & Time</th>
-              <th className="py-3.5 px-4">Location</th>
-              <th className="py-3.5 px-4 text-center">Aksi</th>
+      <div className="w-full">
+        <table className="w-full text-left text-xs table-fixed">
+          <thead className="border-b border-neutral-100 text-neutral-400">
+            <tr>
+              <th className="pb-3 font-medium text-left w-1/4">Event Name</th>
+              <th className="pb-3 font-medium text-center px-2">Ticket Type</th>
+              <th className="pb-3 font-medium text-center px-2">Jumlah</th>
+              <th className="pb-3 font-medium text-center px-2">Date & Time</th>
+              <th className="pb-3 font-medium text-center px-2">Location</th>
+              <th className="pb-3 font-medium text-right pr-2">Aksi</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-100 text-neutral-700">
+          <tbody className="divide-y divide-neutral-50 text-neutral-700">
             {filteredTickets.length > 0 ? (
               filteredTickets.map((ticket) => (
-                <tr key={ticket.id} className="hover:bg-amber-50/30 transition-colors">
-                  <td className="py-4 px-4 font-bold text-neutral-900">
-                    <div className="flex items-center gap-2">
-                      <Ticket className="w-4 h-4 text-amber-500 shrink-0" />
-                      <span>{ticket.eventName}</span>
-                    </div>
+                <tr key={ticket.id}>
+                  <td className="py-4 font-semibold text-neutral-900 pr-2 break-words text-left">
+                    {ticket.eventName}
                   </td>
-                  <td className="py-4 px-4">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800">
+                  <td className="py-4 text-center px-2">
+                    <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800">
                       {ticket.ticketType}
                     </span>
                   </td>
-                  <td className="py-4 px-4 text-center font-bold text-neutral-800">
+                  <td className="py-4 text-center px-2 font-medium text-neutral-800">
                     {ticket.qty}x Ticket
                   </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-1.5 text-neutral-600">
-                      <Calendar className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                      <span>{ticket.dateTime}</span>
-                    </div>
+                  <td className="py-4 text-center px-2 text-neutral-600 break-words">
+                    {ticket.dateTime}
                   </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-1.5 text-neutral-600">
-                      <MapPin className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                      <span>{ticket.location}</span>
-                    </div>
+                  <td className="py-4 text-center px-2 text-neutral-600 break-words">
+                    {ticket.location}
                   </td>
-                  <td className="py-4 px-4 text-center">
+                  <td className="py-4 text-right">
                     <button
                       type="button"
                       disabled={isDownloading && activeDownloadId === ticket.id}
                       onClick={() => handlePrintTicket(ticket)}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-400 hover:bg-amber-500 disabled:bg-amber-300 text-white font-bold rounded-xl text-xs transition shadow-xs cursor-pointer active:scale-95 disabled:cursor-not-allowed"
+                      className="rounded-lg bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 px-3 py-1.5 text-xs font-semibold text-white transition-colors cursor-pointer active:scale-95 disabled:cursor-not-allowed inline-block"
                     >
-                      <Printer className="w-3.5 h-3.5" />
-                      <span>
-                        {isDownloading && activeDownloadId === ticket.id
-                          ? "Generating..."
-                          : "Cetak Tiket"}
-                      </span>
+                      {isDownloading && activeDownloadId === ticket.id
+                        ? "Generating..."
+                        : "Cetak Tiket"}
                     </button>
                   </td>
                 </tr>
